@@ -1,0 +1,166 @@
+{
+  "graph_stats": {
+    "n_nodes": 16,
+    "n_edges": 18,
+    "top_influential": [
+      {
+        "node": "product_wheat",
+        "pagerank": 0.1833
+      },
+      {
+        "node": "market_domestic",
+        "pagerank": 0.1532
+      },
+      {
+        "node": "product_bread",
+        "pagerank": 0.0931
+      },
+      {
+        "node": "product_flour",
+        "pagerank": 0.0835
+      },
+      {
+        "node": "market_export",
+        "pagerank": 0.0646
+      }
+    ],
+    "top_bottlenecks": [
+      {
+        "node": "product_wheat",
+        "betweenness": 0.1905
+      },
+      {
+        "node": "region_akmola",
+        "betweenness": 0.0714
+      },
+      {
+        "node": "product_flour",
+        "betweenness": 0.0524
+      },
+      {
+        "node": "elev_petro",
+        "betweenness": 0.0476
+      },
+      {
+        "node": "elev_kostanay",
+        "betweenness": 0.0476
+      }
+    ]
+  },
+  "granger_causality": {
+    "hypothesis": "PSI → wheat_price_change",
+    "method": "Granger Causality (F-test)",
+    "n_observations": 8,
+    "max_lag_tested": 2,
+    "significant_lags": [],
+    "best_lag": null,
+    "best_p_value": null,
+    "conclusion": "❌ Статистически значимой связи не обнаружено",
+    "per_lag": {
+      "lag_1": {
+        "f_statistic": 0.2271,
+        "p_value": 0.6585,
+        "significant": false,
+        "interpretation": "❌ Нет значимой связи с лагом 1 лет (p=0.659)"
+      },
+      "lag_2": {
+        "f_statistic": 0.0897,
+        "p_value": 0.9208,
+        "significant": false,
+        "interpretation": "❌ Нет значимой связи с лагом 2 лет (p=0.921)"
+      }
+    }
+  },
+  "var_model": {
+    "error": "maxlags is too large for the number of observations and the number of equations. The largest model cannot be estimated."
+  },
+  "node_data": {
+    "water_ili": {
+      "type": "WaterSource",
+      "name": "Река Или",
+      "country": "KZ/CN"
+    },
+    "water_syrdarya": {
+      "type": "WaterSource",
+      "name": "Сырдарья",
+      "country": "KZ/KG"
+    },
+    "water_tobol": {
+      "type": "WaterSource",
+      "name": "Тобол",
+      "country": "KZ/RU"
+    },
+    "region_sko": {
+      "type": "Region",
+      "name": "СКО",
+      "area_ha": 2500000,
+      "psi_risk": 0.0,
+      "psi_value": 1.7553
+    },
+    "region_kostanay": {
+      "type": "Region",
+      "name": "Костанайская",
+      "area_ha": 1800000,
+      "psi_risk": 0.0,
+      "psi_value": 1.7553
+    },
+    "region_akmola": {
+      "type": "Region",
+      "name": "Акмолинская",
+      "area_ha": 2000000,
+      "psi_risk": 0.0,
+      "psi_value": 1.7553
+    },
+    "region_pavlodar": {
+      "type": "Region",
+      "name": "Павлодарская",
+      "area_ha": 500000
+    },
+    "elev_petro": {
+      "type": "Infrastructure",
+      "name": "Петропавловский ХПП",
+      "cap_t": 120000,
+      "fill_pct": NaN
+    },
+    "elev_kokshe": {
+      "type": "Infrastructure",
+      "name": "Кокшетауский элеватор",
+      "cap_t": 95000,
+      "fill_pct": 0.0
+    },
+    "elev_kostanay": {
+      "type": "Infrastructure",
+      "name": "Костанайский ХПП",
+      "cap_t": 200000,
+      "fill_pct": 0.0
+    },
+    "elev_astana": {
+      "type": "Infrastructure",
+      "name": "Астанинский элеватор",
+      "cap_t": 150000
+    },
+    "product_wheat": {
+      "type": "Product",
+      "name": "Пшеница",
+      "unit": "т"
+    },
+    "product_flour": {
+      "type": "Product",
+      "name": "Мука",
+      "unit": "т"
+    },
+    "product_bread": {
+      "type": "Product",
+      "name": "Хлеб",
+      "unit": "шт"
+    },
+    "market_domestic": {
+      "type": "Market",
+      "name": "Внутренний рынок РК"
+    },
+    "market_export": {
+      "type": "Market",
+      "name": "Экспорт (Средняя Азия, Китай)"
+    }
+  }
+}

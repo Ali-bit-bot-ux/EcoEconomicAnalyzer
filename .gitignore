@@ -1,0 +1,49 @@
+# Daryn — .gitignore
+
+# Виртуальное окружение
+.venv/
+venv/
+env/
+
+# Кэш GEE и данные (большие файлы)
+data/raw/gee_cache/
+data/raw/economics/
+*.parquet
+*.gpickle
+*.pkl
+
+# Логи
+logs/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Секреты (никогда не коммитить!)
+.env
+*.key
+*credentials*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Streamlit кэш
+.streamlit/
+
+# Тесты
+.pytest_cache/
+htmlcov/
