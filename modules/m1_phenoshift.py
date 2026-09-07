@@ -41,6 +41,7 @@ from config.settings import (
     PSI_THRESHOLD_LOW,
     MAX_CLOUD_COVER,
     PROCESSED_DIR,
+    NDVI_SCALE,
 )
 
 
@@ -64,10 +65,6 @@ class PhenoShiftModule:
             polygon_coords: Список [lon, lat] пар. По умолчанию — СКО.
         """
         self.polygon_coords = polygon_coords or SKO_POLYGON
-        self.geometry = None   # ee.Geometry, создаётся после init GEE
-
-    def _init_geometry(self):
-        """Создаёт ee.Geometry из координат полигона."""
         self.geometry = ee.Geometry.Polygon(self.polygon_coords)
 
     # ─────────────────────────────────────────────
@@ -101,7 +98,7 @@ class PhenoShiftModule:
             collection=collection,
             geometry=self.geometry,
             band="NDVI",
-            scale=250,  # Увеличен масштаб для предотвращения таймаутов
+            scale=NDVI_SCALE,
         )
 
         if not series:
@@ -177,8 +174,8 @@ class PhenoShiftModule:
         # Заполняем пропущенные DOY интерполяцией
         full_doy = pd.DataFrame({"doy": range(VEGETATION_DOY_START, VEGETATION_DOY_END + 1)})
         norm = full_doy.merge(norm, on="doy", how="left")
-        norm["ndvi_mean"] = norm["ndvi_mean"].interpolate(method="linear")
-        norm["ndvi_std"] = norm["ndvi_std"].interpolate(method="linear").fillna(0.05)
+        norm["ndvi_mean"] = norm["ndvi_mean"].interpolate(method="linear").bfill().ffill()
+        norm["ndvi_std"] = norm["ndvi_std"].interpolate(method="linear").bfill().ffill().fillna(0.05)
 
         # Сглаживание Savitzky-Golay (убираем шум, сохраняем пики)
         window = min(21, len(norm) // 4 * 2 + 1)  # нечётное окно
@@ -333,11 +330,14 @@ class PhenoShiftModule:
         logger.info("МОДУЛЬ 1: PhenoShift Index")
         logger.info("=" * 52)
 
-        # Инициализируем геометрию
-        self._init_geometry()
-
         # Шаг 1: Baseline NDVI
-        df_baseline = self.collect_baseline_ndvi()
+        df_baseline_raw = self.collect_baseline_ndvi()
+        
+        # Защита от утечки данных (Data Leakage)
+        df_baseline = df_baseline_raw[df_baseline_raw["year"] < year]
+        if df_baseline.empty:
+            logger.warning(f"Недостаточно исторических данных до {year} года. Используем все доступные базовые годы.")
+            df_baseline = df_baseline_raw
 
         # Шаг 2: Норма
         df_norm = self.build_phenological_norm(df_baseline)

@@ -62,10 +62,9 @@ class GEEClient:
                             ee.Initialize(project=project_id)
                             logger.info(f"GEE инициализирован с авто-проектом: {project_id}")
                         except Exception:
-                            # Резервный попытка с общедоступным режимом
-                            ee.Initialize(project="ee-daryn-project")
-                            logger.info("GEE инициализирован с резервным проектом")
-                    else:
+                            # Если Cloud Project недоступен, инициализируем базовый Legacy API (если аккаунт старый)
+                            logger.warning("Cloud Project не найден. Пробуем базовую инициализацию...")
+                            ee.Initialize() 
                         raise ex
 
             self._initialized = True
@@ -201,6 +200,26 @@ class GEEClient:
             .select("soil_moisture_am")
         )
 
+    def get_sentinel1(
+        self,
+        geometry: ee.Geometry,
+        start_date: str,
+        end_date: str,
+    ) -> ee.ImageCollection:
+        """
+        Sentinel-1 SAR GRD. Всепогодный радар.
+        Используется поляризация VV и VH.
+        """
+        return (
+            ee.ImageCollection("COPERNICUS/S1_GRD")
+            .filterBounds(geometry)
+            .filterDate(start_date, end_date)
+            .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VV'))
+            .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VH'))
+            .filter(ee.Filter.eq('instrumentMode', 'IW'))
+            .select(['VV', 'VH'])
+        )
+
     # ─────────────────────────────────────────────
     # Внутренние функции обработки снимков
     # ─────────────────────────────────────────────
@@ -316,7 +335,19 @@ class GEEClient:
             })
 
         features = collection.map(reduce_image)
-        result = features.getInfo()
+        
+        import time
+        result = None
+        for attempt in range(3):
+            try:
+                result = features.getInfo()
+                break
+            except ee.EEException as e:
+                if attempt == 2:
+                    logger.error(f"Критическая ошибка GEE getInfo(): {e}")
+                    raise
+                logger.warning(f"Таймаут GEE (попытка {attempt + 1}/3). Ждем {2 ** attempt}с...")
+                time.sleep(2 ** attempt)
 
         # Преобразуем в список dicts
         series = []

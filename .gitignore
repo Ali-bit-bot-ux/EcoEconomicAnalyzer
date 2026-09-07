@@ -5,12 +5,15 @@
 venv/
 env/
 
-# Кэш GEE и данные (большие файлы)
-data/raw/gee_cache/
-data/raw/economics/
-*.parquet
+# Кэш GEE и сырые данные (большие файлы)
+data/raw/
 *.gpickle
 *.pkl
+
+# Разрешаем предрассчитанные результаты анализа для облачного дашборда (< 1 MB)
+!data/processed/*.parquet
+!data/processed/*.json
+!data/processed/*.gpickle
 
 # Логи
 logs/

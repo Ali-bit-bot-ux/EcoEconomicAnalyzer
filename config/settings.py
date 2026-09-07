@@ -14,6 +14,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ─────────────────────────────────────────────
+# Настройки Telegram бота (Модуль оповещений)
+# ─────────────────────────────────────────────
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+
+
+# ─────────────────────────────────────────────
 # Пути проекта
 # ─────────────────────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -121,6 +128,8 @@ VULN_MED_THRESHOLD = 40         # 40-70 → оранжевая зона
 # ─────────────────────────────────────────────
 SENTINEL2_COLLECTION = "COPERNICUS/S2_SR_HARMONIZED"
 LANDSAT8_COLLECTION = "LANDSAT/LC08/C02/T1_L2"
+SENTINEL1_COLLECTION = "COPERNICUS/S1_GRD"
+
 
 # NDVI: (NIR - Red) / (NIR + Red)
 S2_NIR_BAND = "B8"
@@ -130,6 +139,7 @@ L8_RED_BAND = "SR_B4"
 
 # SCL-классы облаков/теней (Sentinel-2 Scene Classification Layer)
 S2_CLOUD_SCL_CLASSES = [3, 8, 9, 10, 11]  # тени, облака (med/high/cirrus), снег
+NDVI_SCALE = 250  # Разрешение для извлечения временных рядов (м)
 
 # ─────────────────────────────────────────────
 # Элеваторы (координаты известных объектов)
@@ -156,4 +166,5 @@ WORLDBANK_INDICATORS = {
 }
 WORLDBANK_COUNTRY = "KAZ"
 
-print("[OK] Daryn configuration loaded successfully")
+import logging
+logging.getLogger(__name__).debug("Daryn configuration loaded successfully")

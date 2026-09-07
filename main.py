@@ -45,10 +45,7 @@ def print_banner():
   Google Earth Engine + Remote Sensing + Econometric Modeling
 ================================================================
     """
-    try:
-        print(banner)
-    except Exception:
-        pass
+    print(banner.strip())
 
 
 def run_pipeline(args):
@@ -145,6 +142,38 @@ def run_pipeline(args):
     logger.success(f"PIPELINE FINISHED in {total_time:.1f}s")
     logger.info("Data saved to: data/processed/")
     logger.info("=" * 60)
+
+    # ─── Telegram Оповещение ─────────────────────────────────────
+    if not args.dry_run and "phenoshift" in results and results["phenoshift"] is not None:
+        try:
+            df_psi = results["phenoshift"]
+            # Находим данные текущего года
+            from config.settings import CURRENT_YEAR
+            current_psi_row = df_psi[df_psi["year"] == CURRENT_YEAR]
+            
+            if not current_psi_row.empty:
+                current_psi = current_psi_row["psi"].values[0]
+                if current_psi < -1.5:
+                    logger.info("🚨 Обнаружен критический уровень PSI, попытка отправки Telegram-уведомления...")
+                    
+                    smai_val = -1.0 # Дефолтное значение
+                    if "hydroborder" in results and results["hydroborder"] is not None:
+                        df_hydro = results["hydroborder"]
+                        if not df_hydro.empty:
+                            y_col = "smai" if "smai" in df_hydro.columns else "soil_moisture"
+                            smai_val = float(df_hydro[y_col].iloc[-1])
+                            
+                    from modules.telegram_bot import DarynTelegramBot
+                    import datetime
+                    bot = DarynTelegramBot()
+                    bot.send_drought_alert(
+                        region="СКО (Тестовый полигон)", 
+                        psi_val=current_psi, 
+                        smai_val=smai_val, 
+                        date=datetime.date.today().strftime("%Y-%m-%d")
+                    )
+        except Exception as e:
+            logger.error(f"Ошибка при проверке триггера Telegram: {e}")
 
     # ─── Дашборд ─────────────────────────────────────────────────
     if args.dashboard:

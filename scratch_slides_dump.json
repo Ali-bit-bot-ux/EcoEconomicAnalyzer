@@ -1,0 +1,813 @@
+[
+  {
+    "slide": 1,
+    "texts": [
+      "AgriCascade",
+      "PRESENTATION",
+      "Karimbay Ali",
+      "Tolebay Ramazan",
+      "AGRICASCADE"
+    ],
+    "shapes": [
+      {
+        "name": "Group 2",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 5",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 8",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Freeform 11",
+        "type": "FREEFORM (5)"
+      },
+      {
+        "name": "TextBox 12",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "AgriCascade"
+        ]
+      },
+      {
+        "name": "TextBox 13",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "PRESENTATION"
+        ]
+      },
+      {
+        "name": "TextBox 14",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Karimbay Ali"
+        ]
+      },
+      {
+        "name": "TextBox 15",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Tolebay Ramazan"
+        ]
+      },
+      {
+        "name": "TextBox 16",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "AGRICASCADE"
+        ]
+      }
+    ]
+  },
+  {
+    "slide": 2,
+    "texts": [
+      "Problem 1",
+      "Егін бұзылуын кеш кезеңде  тіркейді",
+      "Problem 2",
+      "Тереңдік мәселесі Оптика тек жапырақ бетін көреді",
+      "Problem 3",
+      "Климаттық өзгерістерді ерте анықтамау",
+      "01",
+      "02",
+      "03"
+    ],
+    "shapes": [
+      {
+        "name": "Group 2",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 5",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 8",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 11",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 14",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 17",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "TextBox 20",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Problem 1"
+        ]
+      },
+      {
+        "name": "TextBox 21",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Егін бұзылуын кеш кезеңде  тіркейді"
+        ]
+      },
+      {
+        "name": "TextBox 22",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Problem 2"
+        ]
+      },
+      {
+        "name": "TextBox 23",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Тереңдік мәселесі Оптика тек жапырақ бетін көреді"
+        ]
+      },
+      {
+        "name": "TextBox 24",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Problem 3"
+        ]
+      },
+      {
+        "name": "TextBox 25",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Климаттық өзгерістерді ерте анықтамау"
+        ]
+      },
+      {
+        "name": "TextBox 26",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "01"
+        ]
+      },
+      {
+        "name": "TextBox 27",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "02"
+        ]
+      },
+      {
+        "name": "TextBox 28",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "03"
+        ]
+      }
+    ]
+  },
+  {
+    "slide": 3,
+    "texts": [
+      "Key",
+      "Features",
+      "Feature 1",
+      "Ғарыштық мультиспектрлік синтез (Space Data Fusion)Радарлық радиолокация (C-band): Sentinel-1 (SAR) радиолокациялық кері шашырау арқылы бұлттылыққа қарамастан топырақ пен өсімдік діңінің ылғалдылығын тіркейді.",
+      "Feature 3",
+      "Feature 2",
+      "27 күндік ақпараттық басымдық: Оптикалық сарғаю пайда болғанға дейін 27 күн бұрын тамырлық су тапшылығын ғарыштан тіркеу.",
+      "Микротолқынды радиометрия (L-band): NASA SMAP спутнигінің радиометриялық деректері арқылы топырақтың тамыр жүйесіндегі ылғал индексін алу."
+    ],
+    "shapes": [
+      {
+        "name": "Group 2",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 5",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 8",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 11",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "TextBox 14",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Key",
+          "Features"
+        ]
+      },
+      {
+        "name": "TextBox 15",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Feature 1"
+        ]
+      },
+      {
+        "name": "TextBox 16",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Ғарыштық мультиспектрлік синтез (Space Data Fusion)Радарлық радиолокация (C-band): Sentinel-1 (SAR) радиолокациялық кері шашырау арқылы бұлттылыққа қарамастан топырақ пен өсімдік діңінің ылғалдылығын тіркейді."
+        ]
+      },
+      {
+        "name": "TextBox 17",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Feature 3"
+        ]
+      },
+      {
+        "name": "TextBox 18",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Feature 2"
+        ]
+      },
+      {
+        "name": "TextBox 19",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "27 күндік ақпараттық басымдық: Оптикалық сарғаю пайда болғанға дейін 27 күн бұрын тамырлық су тапшылығын ғарыштан тіркеу."
+        ]
+      },
+      {
+        "name": "TextBox 20",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Микротолқынды радиометрия (L-band): NASA SMAP спутнигінің радиометриялық деректері арқылы топырақтың тамыр жүйесіндегі ылғал индексін алу."
+        ]
+      }
+    ]
+  },
+  {
+    "slide": 4,
+    "texts": [
+      "TECH STACK",
+      "Google Earth Engine,",
+      "Sentinel-1, SMAP",
+      "Радарлық микротолқынды ғарыштық деректерді өңдеу",
+      "Python, Var, Granger Causality",
+      "Баға шоктары мен аномалияларды эконометрикалық модельдеу",
+      "GIS & Interface",
+      "OSMnx, Streamlit, Folium",
+      "207 элеватор марштруты және интерактивті ГИС-карталар"
+    ],
+    "shapes": [
+      {
+        "name": "Group 2",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 5",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 8",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 11",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Freeform 14",
+        "type": "FREEFORM (5)"
+      },
+      {
+        "name": "Freeform 15",
+        "type": "FREEFORM (5)"
+      },
+      {
+        "name": "Freeform 16",
+        "type": "FREEFORM (5)"
+      },
+      {
+        "name": "TextBox 17",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "TECH STACK"
+        ]
+      },
+      {
+        "name": "TextBox 18",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Google Earth Engine,",
+          "Sentinel-1, SMAP",
+          "Радарлық микротолқынды ғарыштық деректерді өңдеу"
+        ]
+      },
+      {
+        "name": "TextBox 19",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Python, Var, Granger Causality",
+          "Баға шоктары мен аномалияларды эконометрикалық модельдеу"
+        ]
+      },
+      {
+        "name": "TextBox 20",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "GIS & Interface",
+          "OSMnx, Streamlit, Folium",
+          "207 элеватор марштруты және интерактивті ГИС-карталар"
+        ]
+      }
+    ]
+  },
+  {
+    "slide": 5,
+    "texts": [
+      "01",
+      "02",
+      "03",
+      "Function 1",
+      "Function 2",
+      "Function 3",
+      "Интерактивті ГИС-Дашборд (Live Demo)🌱 PhenoMap: Sentinel-2 оптикалық спектрлік индекстерінің (NDVI/NDWI) геокеңістіктік динамикасы.",
+      "HydroRisk: Sentinel-1 SAR және SMAP радарлық ылғалдылық картасы.",
+      "SiloSentry: 207 элеватордың кеңістіктік координаттары мен инфрақұрылымдық векторлары.",
+      "04",
+      "Function 4",
+      "MarketSpread &  RiskEngine: Орбиталық индикаторлар негізінде ИИ-талдау."
+    ],
+    "shapes": [
+      {
+        "name": "Group 2",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 5",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 8",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "TextBox 11",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "01"
+        ]
+      },
+      {
+        "name": "TextBox 12",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "02"
+        ]
+      },
+      {
+        "name": "TextBox 13",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "03"
+        ]
+      },
+      {
+        "name": "TextBox 14",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Function 1"
+        ]
+      },
+      {
+        "name": "TextBox 15",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Function 2"
+        ]
+      },
+      {
+        "name": "TextBox 16",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Function 3"
+        ]
+      },
+      {
+        "name": "TextBox 17",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Интерактивті ГИС-Дашборд (Live Demo)🌱 PhenoMap: Sentinel-2 оптикалық спектрлік индекстерінің (NDVI/NDWI) геокеңістіктік динамикасы."
+        ]
+      },
+      {
+        "name": "TextBox 18",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "HydroRisk: Sentinel-1 SAR және SMAP радарлық ылғалдылық картасы."
+        ]
+      },
+      {
+        "name": "TextBox 19",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "SiloSentry: 207 элеватордың кеңістіктік координаттары мен инфрақұрылымдық векторлары."
+        ]
+      },
+      {
+        "name": "Group 20",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "TextBox 23",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "04"
+        ]
+      },
+      {
+        "name": "TextBox 24",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Function 4"
+        ]
+      },
+      {
+        "name": "TextBox 25",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "MarketSpread &  RiskEngine: Орбиталық индикаторлар негізінде ИИ-талдау."
+        ]
+      }
+    ]
+  },
+  {
+    "slide": 6,
+    "texts": [
+      "ИНДИКАТОР КӨЛЕМІ ҒАРЫШТЫҚ СЕГМЕНТТІҢ СИПАТТАМАСЫ TAM  АГРО-ГЕОАНАЛИТИКАЛЫҚ ПО НАРЫҒЫ.",
+      "TAM",
+      "Market Opportunity — TAM / SAM / SOM",
+      "Ғарыштық гео-аналитика нарығы",
+      "SAM (ЦА ЖӘНЕ СНГ) ОРТАЛЫҚ АЗИЯНЫҢ ҒАРЫШТЫҚ МОНИТОРИНГТІК СОФТ НАРЫҒЫ (65% ДИСКОНТПЕН).",
+      "SAM",
+      "SOM (ҚАЗАҚСТАН, 3 ЖЫЛ)",
+      "(BASE CASE)ҚР 207 ЭЛЕВАТОРЫ МЕН АГРОХОЛДИНГТЕРІНІҢ ҒАРЫШТЫҚ DSS-КЕ СҰРАНЫСЫ.",
+      "SOM",
+      "$12.0B",
+      "$140 M",
+      "$1.2 M"
+    ],
+    "shapes": [
+      {
+        "name": "Group 2",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 5",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 8",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 11",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 14",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 17",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 20",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "AutoShape 23",
+        "type": "AUTO_SHAPE (1)"
+      },
+      {
+        "name": "AutoShape 24",
+        "type": "AUTO_SHAPE (1)"
+      },
+      {
+        "name": "TextBox 25",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "ИНДИКАТОР КӨЛЕМІ ҒАРЫШТЫҚ СЕГМЕНТТІҢ СИПАТТАМАСЫ TAM  АГРО-ГЕОАНАЛИТИКАЛЫҚ ПО НАРЫҒЫ."
+        ]
+      },
+      {
+        "name": "TextBox 26",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "TAM"
+        ]
+      },
+      {
+        "name": "TextBox 27",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Market Opportunity — TAM / SAM / SOM"
+        ]
+      },
+      {
+        "name": "TextBox 28",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Ғарыштық гео-аналитика нарығы"
+        ]
+      },
+      {
+        "name": "TextBox 29",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "SAM (ЦА ЖӘНЕ СНГ) ОРТАЛЫҚ АЗИЯНЫҢ ҒАРЫШТЫҚ МОНИТОРИНГТІК СОФТ НАРЫҒЫ (65% ДИСКОНТПЕН)."
+        ]
+      },
+      {
+        "name": "TextBox 30",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "SAM"
+        ]
+      },
+      {
+        "name": "TextBox 31",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "SOM (ҚАЗАҚСТАН, 3 ЖЫЛ)",
+          "(BASE CASE)ҚР 207 ЭЛЕВАТОРЫ МЕН АГРОХОЛДИНГТЕРІНІҢ ҒАРЫШТЫҚ DSS-КЕ СҰРАНЫСЫ."
+        ]
+      },
+      {
+        "name": "TextBox 32",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "SOM"
+        ]
+      },
+      {
+        "name": "TextBox 33",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "$12.0B"
+        ]
+      },
+      {
+        "name": "TextBox 34",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "$140 M"
+        ]
+      },
+      {
+        "name": "TextBox 35",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "$1.2 M"
+        ]
+      }
+    ]
+  },
+  {
+    "slide": 7,
+    "texts": [
+      "Орбиталық деректерді ғылыми валидациялау",
+      "Ретроспективті эксперимент: СКО өңіріндегі 2021 жылғы аномальды құрғақшылықтың спутниктік уақытша қатарларына тест жүргізілді.",
+      "Нормативті есептеу",
+      "Data Leakage = 0%: Спутниктік нормативтерді есептеу кезінде тек мақсатты кезеңге дейінгі орбиталық деректер пайдаланылды",
+      "Ғылыми нәтиже",
+      "Жүйе топырақтағы жасырын радиометриялық аномалияны ресми құрғақшылық мәлімделгенге дейін 27 күн бұрын анықтады.",
+      "BackTesting"
+    ],
+    "shapes": [
+      {
+        "name": "Group 2",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 5",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 8",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "TextBox 11",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Орбиталық деректерді ғылыми валидациялау"
+        ]
+      },
+      {
+        "name": "TextBox 12",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Ретроспективті эксперимент: СКО өңіріндегі 2021 жылғы аномальды құрғақшылықтың спутниктік уақытша қатарларына тест жүргізілді."
+        ]
+      },
+      {
+        "name": "TextBox 13",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Нормативті есептеу"
+        ]
+      },
+      {
+        "name": "TextBox 14",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Data Leakage = 0%: Спутниктік нормативтерді есептеу кезінде тек мақсатты кезеңге дейінгі орбиталық деректер пайдаланылды"
+        ]
+      },
+      {
+        "name": "TextBox 15",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Ғылыми нәтиже"
+        ]
+      },
+      {
+        "name": "TextBox 16",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Жүйе топырақтағы жасырын радиометриялық аномалияны ресми құрғақшылық мәлімделгенге дейін 27 күн бұрын анықтады."
+        ]
+      },
+      {
+        "name": "TextBox 17",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "BackTesting"
+        ]
+      }
+    ]
+  },
+  {
+    "slide": 8,
+    "texts": [
+      "01",
+      "02",
+      "03",
+      "Орбиталық деректерді ғылыми валидациялау",
+      "Stylish",
+      "Attractive",
+      "Describe how you envision to solve the problems you previously shared.",
+      "Describe how you envision to solve the problems you previously shared.",
+      "Describe how you envision to solve the problems you previously shared."
+    ],
+    "shapes": [
+      {
+        "name": "Group 2",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 5",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 8",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "TextBox 11",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "01"
+        ]
+      },
+      {
+        "name": "TextBox 12",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "02"
+        ]
+      },
+      {
+        "name": "TextBox 13",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "03"
+        ]
+      },
+      {
+        "name": "TextBox 14",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Орбиталық деректерді ғылыми валидациялау"
+        ]
+      },
+      {
+        "name": "TextBox 15",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Stylish"
+        ]
+      },
+      {
+        "name": "TextBox 16",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Attractive"
+        ]
+      },
+      {
+        "name": "TextBox 17",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Describe how you envision to solve the problems you previously shared."
+        ]
+      },
+      {
+        "name": "TextBox 18",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Describe how you envision to solve the problems you previously shared."
+        ]
+      },
+      {
+        "name": "TextBox 19",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Describe how you envision to solve the problems you previously shared."
+        ]
+      }
+    ]
+  },
+  {
+    "slide": 9,
+    "texts": [],
+    "shapes": []
+  },
+  {
+    "slide": 10,
+    "texts": [],
+    "shapes": []
+  },
+  {
+    "slide": 11,
+    "texts": [
+      "Thank You",
+      "FOR YOUR TIME",
+      "hello@reallygreatsite.com",
+      "Alfredo Torres",
+      "Айжан Искакова"
+    ],
+    "shapes": [
+      {
+        "name": "Group 2",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 5",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "Group 8",
+        "type": "GROUP (6)"
+      },
+      {
+        "name": "TextBox 11",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Thank You"
+        ]
+      },
+      {
+        "name": "TextBox 12",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "FOR YOUR TIME"
+        ]
+      },
+      {
+        "name": "TextBox 13",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "hello@reallygreatsite.com"
+        ]
+      },
+      {
+        "name": "TextBox 14",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Alfredo Torres"
+        ]
+      },
+      {
+        "name": "TextBox 15",
+        "type": "TEXT_BOX (17)",
+        "texts": [
+          "Айжан Искакова"
+        ]
+      }
+    ]
+  }
+]

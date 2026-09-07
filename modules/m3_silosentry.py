@@ -41,10 +41,12 @@ except ImportError:
 
 try:
     import osmnx as ox
+    import networkx as nx
     OSM_AVAILABLE = True
 except ImportError:
     OSM_AVAILABLE = False
-    logger.warning("osmnx не установлен. Метод OSM недоступен.")
+    logger.warning("osmnx или networkx не установлен. Метод OSM недоступен.")
+
 
 from pipeline.gee_client import gee
 from config.settings import (
@@ -275,6 +277,69 @@ class SiloSentryModule:
         return df
 
     # ─────────────────────────────────────────────
+    # Метод C: Логистический граф OSM (Routing)
+    # ─────────────────────────────────────────────
+
+    def calculate_logistics_routes(self, df_result: pd.DataFrame) -> dict:
+        """
+        Строит граф дорог вокруг тестового центра (SKO_CENTER) 
+        и рассчитывает маршрут до ближайших элеваторов с профицитом (не FULL).
+        """
+        if not OSM_AVAILABLE:
+            logger.warning("OSM недоступен, маршруты не будут построены.")
+            return {}
+
+        logger.info("Построение логистического графа OSM (NetworkX)...")
+        center_lon, center_lat = SKO_CENTER
+        
+        try:
+            # Локальное кэширование графа на диск (NetworkX GraphML)
+            graph_path = PROCESSED_DIR / "sko_drive_graph.graphml"
+            if graph_path.exists():
+                logger.info("Загрузка графа OSM из локального кэша...")
+                G = ox.load_graphml(graph_path)
+            else:
+                logger.info("Скачивание графа OSM...")
+                G = ox.graph_from_point((center_lat, center_lon), dist=100000, network_type='drive')
+                ox.save_graphml(G, graph_path)
+            
+            # Находим ближайший узел к центру эко-стресса
+            orig_node = ox.nearest_nodes(G, center_lon, center_lat)
+            
+            routes = {}
+            # Ищем элеваторы с профицитом
+            surplus_silos = df_result[df_result["status"] != "ACTIVE_FULL"]
+            
+            for _, row in surplus_silos.iterrows():
+                dest_lon, dest_lat = row["lon"], row["lat"]
+                
+                # Проверяем, попадает ли элеватор в наш граф (грубая проверка по координатам)
+                if abs(dest_lat - center_lat) > 1.0 or abs(dest_lon - center_lon) > 1.5:
+                    continue
+                    
+                dest_node = ox.nearest_nodes(G, dest_lon, dest_lat)
+                
+                try:
+                    # Рассчитываем кратчайший путь
+                    route = nx.shortest_path(G, orig_node, dest_node, weight='length')
+                    
+                    # Извлекаем координаты маршрута
+                    route_coords = [[G.nodes[n]['y'], G.nodes[n]['x']] for n in route]
+                    routes[row["name"]] = {
+                        "length_km": nx.shortest_path_length(G, orig_node, dest_node, weight='length') / 1000.0,
+                        "coords": route_coords
+                    }
+                    logger.success(f"  Маршрут к '{row['name']}' построен: {routes[row['name']]['length_km']:.1f} км")
+                except nx.NetworkXNoPath:
+                    logger.warning(f"  Нет пути до '{row['name']}'")
+            
+            return routes
+            
+        except Exception as e:
+            logger.error(f"Ошибка при построении графа OSM: {e}")
+            return {}
+
+    # ─────────────────────────────────────────────
     # Основной запуск
     # ─────────────────────────────────────────────
 
@@ -311,7 +376,15 @@ class SiloSentryModule:
             else "UNKNOWN"
         )
 
-        # 4. Сохраняем
+        # 4. Логистические маршруты (OSM)
+        routes = self.calculate_logistics_routes(df_result)
+        
+        # Сохраняем маршруты в отдельный JSON, чтобы дашборд мог их отрендерить
+        routes_path = PROCESSED_DIR / "logistics_routes.json"
+        with open(routes_path, "w", encoding="utf-8") as f:
+            json.dump(routes, f, ensure_ascii=False, indent=2)
+
+        # 5. Сохраняем DataFrame
         df_result.to_parquet(self.OUTPUT_PATH)
         logger.success(f"SiloSentry результаты сохранены → {self.OUTPUT_PATH}")
         logger.info(f"\n{df_result[['name', 'region', 'estimated_fill_pct', 'status']].to_string(index=False)}")

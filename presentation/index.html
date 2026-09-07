@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgriCascade — Ғарыштық мониторинг және эконометрика</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #070a12;
+      --card-bg: rgba(18, 25, 44, 0.75);
+      --card-border: rgba(56, 189, 248, 0.2);
+      --card-border-hover: rgba(249, 115, 22, 0.6);
+      --accent-orange: #f97316;
+      --accent-orange-glow: rgba(249, 115, 22, 0.35);
+      --accent-cyan: #38bdf8;
+      --accent-cyan-glow: rgba(56, 189, 248, 0.3);
+      --accent-emerald: #10b981;
+      --accent-purple: #a855f7;
+      --accent-rose: #f43f5e;
+      --text-white: #ffffff;
+      --text-light: #e2e8f0;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-white);
+      font-family: 'Outfit', sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #space-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* Deck Container */
+    .deck-container {
+      position: relative;
+      z-index: 10;
+      width: 95vw;
+      max-width: 1550px;
+      height: 88vh;
+      max-height: 880px;
+      background: radial-gradient(circle at top right, rgba(30, 41, 69, 0.4), rgba(7, 10, 18, 0.95) 75%);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 40px rgba(56, 189, 248, 0.08);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      backdrop-filter: blur(12px);
+    }
+
+    /* Top Navigation Bar */
+    .deck-topbar {
+      height: 60px;
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(10, 14, 26, 0.6);
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 1.25rem;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-logo .dot {
+      width: 10px;
+      height: 10px;
+      background: var(--accent-orange);
+      border-radius: 50%;
+      box-shadow: 0 0 12px var(--accent-orange);
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .slide-counter {
+      font-family: 'Space Grotesk', monospace;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-icon {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-light);
+      padding: 8px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-icon:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    /* Slides Viewport */
+    .slides-wrapper {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      padding: 40px 50px 30px;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      visibility: hidden;
+      transform: scale(0.97) translateY(12px);
+      transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), 
+                  transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+                  visibility 0.45s;
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+      transform: scale(1) translateY(0);
+    }
+
+    /* Badges & Headers */
+    .tag-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(56, 189, 248, 0.12);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 6px 14px;
+      border-radius: 30px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      width: fit-content;
+    }
+
+    .tag-badge.orange {
+      background: rgba(249, 115, 22, 0.12);
+      color: var(--accent-orange);
+      border-color: rgba(249, 115, 22, 0.3);
+    }
+
+    .slide-header {
+      margin-bottom: 28px;
+    }
+
+    .slide-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: -0.5px;
+      color: var(--text-white);
+    }
+
+    .slide-subtitle {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    /* Grids & Cards */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      flex: 1;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      flex: 1;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    }
+
+    .card:hover {
+      border-color: var(--card-border-hover);
+      transform: translateY(-4px);
+      box-shadow: 0 15px 35px -5px rgba(249, 115, 22, 0.15);
+    }
+
+    .card-num {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.15rem;
+      margin-bottom: 18px;
+    }
+
+    .card-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .card-sub {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+
+    .card-desc {
+      font-size: 0.98rem;
+      line-height: 1.6;
+      color: var(--text-light);
+      flex: 1;
+    }
+
+    .card-divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.08);
+      margin: 16px 0;
+    }
+
+    /* Bottom Bar & Controls */
+    .deck-bottombar {
+      height: 64px;
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(10, 14, 26, 0.7);
+    }
+
+    .progress-track {
+      flex: 1;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      margin: 0 40px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 12.5%;
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-orange));
+      border-radius: 6px;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 10px var(--accent-orange);
+    }
+
+    .nav-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover:not(:disabled) {
+      background: var(--accent-orange);
+      border-color: var(--accent-orange);
+      transform: scale(1.08);
+      box-shadow: 0 0 15px var(--accent-orange-glow);
+    }
+
+    .nav-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    /* Specific Slide Enhancements */
+    /* Slide 1 */
+    .hero-title {
+      font-size: 4rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #ffffff 40%, var(--accent-orange) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+      letter-spacing: -1.5px;
+    }
+
+    .hero-theme {
+      font-size: 1.65rem;
+      font-weight: 700;
+      line-height: 1.35;
+      color: #fff;
+      max-width: 90%;
+      margin-bottom: 10px;
+    }
+
+    .hero-theme-en {
+      font-size: 1.05rem;
+      font-style: italic;
+      color: var(--text-muted);
+      margin-bottom: 36px;
+    }
+
+    .title-footer-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: auto;
+    }
+
+    /* Slide 3 Stat */
+    .stat-badge {
+      background: rgba(10, 14, 26, 0.8);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      margin-top: auto;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .stat-val {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    /* Slide 4 Tech Pills */
+    .tech-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    /* Slide 6 Numbers */
+    .market-val {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 3.4rem;
+      font-weight: 800;
+      line-height: 1;
+      margin: 12px 0 6px;
+    }
+
+    /* Slide 7 Timeline */
+    .timeline-strip {
+      background: rgba(19, 27, 46, 0.7);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 24px;
+      margin-top: 20px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      position: relative;
+    }
+
+    .step-card {
+      position: relative;
+      padding-left: 12px;
+      border-left: 3px solid var(--accent-cyan);
+    }
+
+    .step-badge {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 800;
+      font-size: 0.85rem;
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+
+    .metric-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+
+    .metric-card {
+      background: rgba(19, 27, 46, 0.8);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .metric-card h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 800;
+    }
+
+    .metric-card p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Slide 8 Conclusion */
+    .conclusion-box {
+      text-align: center;
+      margin: auto 0;
+    }
+  </style>
+</head>
+<body>
+  <!-- Space Canvas Background -->
+  <canvas id="space-canvas"></canvas>
+
+  <div class="deck-container">
+    <!-- Topbar -->
+    <div class="deck-topbar">
+      <div class="brand-logo">
+        <div class="dot"></div>
+        <span>AgriCascade</span>
+      </div>
+      <div class="topbar-right">
+        <div class="slide-counter" id="slideIndicator">01 / 08</div>
+        <button class="btn-icon" id="fullscreenBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+          Толық экран
+        </button>
+      </div>
+    </div>
+
+    <!-- Slides Wrapper -->
+    <div class="slides-wrapper">
+      <!-- SLIDE 1 -->
+      <div class="slide active" data-index="1">
+        <div class="tag-badge">СЕКЦИЯ: ЖЕР ЖӘНЕ ҒАРЫШ ТУРАЛЫ ҒЫЛЫМДАР. АСТРОНОМИЯ</div>
+        <h1 class="hero-title">AgriCascade</h1>
+        <h2 class="hero-theme">Ғарыштық радарлық-оптикалық зондтау және эконометрика негізінде агро-тәуекелдерді ерте болжау жүйесі</h2>
+        <p class="hero-theme-en">Early Agro-Risk Forecasting System based on Space Radar-Optical Sensing and Econometrics</p>
+
+        <div class="title-footer-cards">
+          <div class="card">
+            <span style="color: var(--accent-cyan); font-weight: 800; font-size: 0.85rem; letter-spacing: 0.5px;">ЖОБА ОРЫНДАУШЫЛАРЫ:</span>
+            <div style="font-size: 1.35rem; font-weight: 700; margin-top: 8px;">
+              • Кәрімбай Әли (Karimbay Ali)<br>
+              • Төлебай Рамазан (Tolebay Ramazan)
+            </div>
+            <div style="font-size: 0.9rem; color: var(--text-muted); margin-top: 6px;">Жас зерттеушілер & Әзірлеушілер тобы</div>
+          </div>
+          <div class="card">
+            <span style="color: var(--accent-orange); font-weight: 800; font-size: 0.85rem; letter-spacing: 0.5px;">ҒЫЛЫМИ ЖЕТЕКШІ:</span>
+            <div style="font-size: 1.35rem; font-weight: 700; margin-top: 8px;">
+              • Искакова Айжан (Искакова А.)
+            </div>
+            <div style="font-size: 0.9rem; color: var(--text-muted); margin-top: 6px;">Ғылыми кеңесші & Жоба кураторы</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 2 -->
+      <div class="slide" data-index="2">
+        <div class="tag-badge">МӘСЕЛЕНІҢ ӨЗЕКТІЛІГІ</div>
+        <div class="slide-header">
+          <h2 class="slide-title">Ғарыштық зондтаудың өзекті мәселелері</h2>
+          <p class="slide-subtitle">Дәстүрлі агро-мониторингтің шектеулері мен климаттық қауіп-қатерлер</p>
+        </div>
+
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-num" style="background: rgba(249, 115, 22, 0.2); color: var(--accent-orange);">01</div>
+            <h3 class="card-title">Оптика шектеуі</h3>
+            <div class="card-sub" style="color: var(--accent-orange);">Бұлттылық және кеш тіркеу</div>
+            <div class="card-divider"></div>
+            <p class="card-desc">Дәстүрлі оптикалық спутниктер (Sentinel-2) бұлтты күндері жер бетін көре алмайды. Сонымен қатар, оптика өсімдіктің вегетациялық бұзылуын тек кеш кезеңде (жапырақтары сарғайып, зақымданғанда ғана) <strong>тіркейді</strong>.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-num" style="background: rgba(56, 189, 248, 0.2); color: var(--accent-cyan);">02</div>
+            <h3 class="card-title">Тамыр тереңдігі</h3>
+            <div class="card-sub" style="color: var(--accent-cyan);">NDVI тек жапырақ бетін көреді</div>
+            <div class="card-divider"></div>
+            <p class="card-desc">Оптикалық спектрлік индекстер тек дақылдың үстіңгі қабатын ғана сканерлейді. Топырақтың тамыр тереңдігіндегі (root-zone) ылғал жетіспеушілігін көре алмайды, нәтижесінде фермерлер ерте әрекет ету мүмкіндігінен айырылады.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-num" style="background: rgba(244, 63, 94, 0.2); color: var(--accent-rose);">03</div>
+            <h3 class="card-title">Климаттық қауіп</h3>
+            <div class="card-sub" style="color: var(--accent-rose);">Аномалиялар мен баға шоктары</div>
+            <div class="card-divider"></div>
+            <p class="card-desc">Климаттың күрт құбылуы мен экстремалды құрғақшылықты уақытылы ерте анықтамау астық шығымының төмендеуіне, логистикалық инфрақұрылымның тоқырауына және биржада күрт баға шоктарына алып келеді.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 3 -->
+      <div class="slide" data-index="3">
+        <div class="tag-badge">НЕГІЗГІ ЕРЕКШЕЛІКТЕР</div>
+        <div class="slide-header">
+          <h2 class="slide-title">Ғарыштық мультиспектрлік синтез (Space Data Fusion)</h2>
+          <p class="slide-subtitle">Оптикалық, радарлық және микротолқынды зондтауды біріктіру арқылы ерте болжау</p>
+        </div>
+
+        <div class="grid-3">
+          <div class="card">
+            <div class="tag-badge" style="margin-bottom: 12px;">01 // РАДАРЛЫҚ ЗОНДТАУ</div>
+            <h3 class="card-title">C-band Радиолокация</h3>
+            <div class="card-sub" style="color: var(--accent-cyan);">Sentinel-1 (SAR) — ESA</div>
+            <p class="card-desc">Радиолокациялық кері шашырау (backscatter) арқылы бұлттылық пен кез келген ауа райына қарамастан, тәуліктің кез келген мезгілінде топырақ пен өсімдік діңінің ылғалдылығын дәл тіркейді.</p>
+            <div class="stat-badge">
+              <div class="stat-val" style="color: var(--accent-cyan);">24/7</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Ауа райына тәуелсіз мониторинг</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="tag-badge" style="margin-bottom: 12px; background: rgba(168, 85, 247, 0.15); color: var(--accent-purple); border-color: rgba(168, 85, 247, 0.3);">02 // РАДИОМЕТРИЯ</div>
+            <h3 class="card-title">L-band Радиометрия</h3>
+            <div class="card-sub" style="color: var(--accent-purple);">NASA SMAP Спутнигі</div>
+            <p class="card-desc">Микротолқынды радиометрия көмегімен жер асты тереңдігіне бойлап, өсімдік тамыр жүйесіндегі (Root-zone Soil Moisture) су қоры мен ылғал тапшылығы динамикасын тіркейді.</p>
+            <div class="stat-badge">
+              <div class="stat-val" style="color: var(--accent-purple);">0-100 см</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Тамыр тереңдігіндегі ылғал</div>
+            </div>
+          </div>
+
+          <div class="card" style="border-color: var(--accent-orange); background: rgba(30, 25, 38, 0.8);">
+            <div class="tag-badge orange" style="margin-bottom: 12px;">03 // НЕГІЗГІ БАСЫМДЫҚ</div>
+            <h3 class="card-title">Ақпараттық басымдық</h3>
+            <div class="card-sub" style="color: var(--accent-orange);">Ерте ескерту жүйесі</div>
+            <p class="card-desc">Дәстүрлі оптикалық сарғаю (NDVI төмендеуі) көзге көрінгенге дейін тамырлық ылғал тапшылығын алдын ала анықтап, шешім қабылдауға құнды уақыт береді.</p>
+            <div class="stat-badge" style="border-color: rgba(249, 115, 22, 0.4);">
+              <div class="stat-val" style="color: var(--accent-orange); font-size: 2.8rem;">+27 КҮН</div>
+              <div style="font-size: 0.85rem; color: #fff; font-weight: 600;">Оптикалық белгіден бұрын анықтау</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 4 -->
+      <div class="slide" data-index="4">
+        <div class="tag-badge">ТЕХНОЛОГИЯЛЫҚ АРХИТЕКТУРА</div>
+        <div class="slide-header">
+          <h2 class="slide-title">AgriCascade Tech Stack & Data Pipeline</h2>
+          <p class="slide-subtitle">Орбиталық деректерді өңдеуден бастап эконометрикалық болжау мен ГИС-интерфейске дейін</p>
+        </div>
+
+        <div class="grid-3">
+          <div class="card">
+            <div class="tag-badge">МОДУЛЬ 01</div>
+            <h3 class="card-title" style="color: var(--accent-cyan);">Orbital Data ETL</h3>
+            <p class="card-desc" style="margin-bottom: 16px;">Радарлық және микротолқынды ғарыштық деректерді жергілікті климаттық торға автоматты калибрлеу, сүзу және интеграциялау.</p>
+            <div class="tech-pill">✔ Google Earth Engine (GEE API)</div>
+            <div class="tech-pill">✔ Copernicus Sentinel-1 (SAR)</div>
+            <div class="tech-pill">✔ NASA SMAP Radiometer</div>
+            <div class="tech-pill">✔ Sentinel-2 MSI (Optics)</div>
+          </div>
+
+          <div class="card">
+            <div class="tag-badge orange">МОДУЛЬ 02</div>
+            <h3 class="card-title" style="color: var(--accent-orange);">Geo-Econometrics</h3>
+            <p class="card-desc" style="margin-bottom: 16px;">Спутниктік аномалиялар мен нарықтық баға шоктары арасындағы себеп-салдарлық байланысты дәлелдеу және бағаны модельдеу.</p>
+            <div class="tech-pill">✔ Python 3.11+ / Pandas / NumPy</div>
+            <div class="tech-pill">✔ Statsmodels & SciPy</div>
+            <div class="tech-pill">✔ Vector Autoregression (VAR)</div>
+            <div class="tech-pill">✔ Granger Causality Testing</div>
+          </div>
+
+          <div class="card">
+            <div class="tag-badge" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); border-color: rgba(16, 185, 129, 0.3);">МОДУЛЬ 03</div>
+            <h3 class="card-title" style="color: var(--accent-emerald);">GIS & Interface</h3>
+            <p class="card-desc" style="margin-bottom: 16px;">Қазақстанның астық логистикасы мен элеватор инфрақұрылымын көрсететін интерактивті карталар мен шешім қабылдау панелі.</p>
+            <div class="tech-pill">✔ Streamlit Web Framework</div>
+            <div class="tech-pill">✔ Folium / Leaflet Geovisualization</div>
+            <div class="tech-pill">✔ OSMnx Road & Railway Graphs</div>
+            <div class="tech-pill">✔ 207 Элеватор бағыттары</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 5 -->
+      <div class="slide" data-index="5">
+        <div class="tag-badge">ПЛАТФОРМА ФУНКЦИЯЛАРЫ</div>
+        <div class="slide-header">
+          <h2 class="slide-title">Интерактивті ГИС-Дашборд модульдері (Live Platform)</h2>
+          <p class="slide-subtitle">Шешім қабылдауға арналған 4 негізгі талдау және мониторинг сервисі</p>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 12px;">
+              <div class="card-num" style="background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald); margin: 0;">01</div>
+              <div>
+                <h3 class="card-title" style="margin: 0;">PhenoMap</h3>
+                <div style="font-size: 0.85rem; color: var(--accent-emerald); font-weight: 600;">Оптикалық вегетациялық мониторинг</div>
+              </div>
+            </div>
+            <p class="card-desc">Sentinel-2 спутнигінің оптикалық спектрлік индекстерінің (NDVI/NDWI) геокеңістіктік динамикасы. Өсімдік жамылғысының биомассасы мен ылғал индексін нақты уақытта бақылау.</p>
+          </div>
+
+          <div class="card">
+            <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 12px;">
+              <div class="card-num" style="background: rgba(56, 189, 248, 0.2); color: var(--accent-cyan); margin: 0;">02</div>
+              <div>
+                <h3 class="card-title" style="margin: 0;">HydroRisk</h3>
+                <div style="font-size: 0.85rem; color: var(--accent-cyan); font-weight: 600;">Радарлық тамыр ылғалдылық картасы</div>
+              </div>
+            </div>
+            <p class="card-desc">Sentinel-1 SAR және NASA SMAP радарлық-радиометриялық деректері негізінде топырақтың тамыр деңгейіндегі су балансы мен гидрологиялық күйзеліс аймақтарын дәл анықтау.</p>
+          </div>
+
+          <div class="card">
+            <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 12px;">
+              <div class="card-num" style="background: rgba(249, 115, 22, 0.2); color: var(--accent-orange); margin: 0;">03</div>
+              <div>
+                <h3 class="card-title" style="margin: 0;">SiloSentry</h3>
+                <div style="font-size: 0.85rem; color: var(--accent-orange); font-weight: 600;">Элеваторлар инфрақұрылымы</div>
+              </div>
+            </div>
+            <p class="card-desc">Қазақстан бойынша 207 элеватордың кеңістіктік координаттары, логистикалық бағыттары (OSMnx) және астық сақтау сыйымдылығының кешенді желілік моделі.</p>
+          </div>
+
+          <div class="card">
+            <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 12px;">
+              <div class="card-num" style="background: rgba(168, 85, 247, 0.2); color: var(--accent-purple); margin: 0;">04</div>
+              <div>
+                <h3 class="card-title" style="margin: 0;">MarketSpread & RiskEngine</h3>
+                <div style="font-size: 0.85rem; color: var(--accent-purple); font-weight: 600;">Эконометрикалық ИИ-талдау</div>
+              </div>
+            </div>
+            <p class="card-desc">Орбиталық вегетациялық индикаторлар мен биржалық бағалар негізінде астық нарығындағы баға шоктарын және жеткізу тәуекелдерін алдын ала бағалау.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 6 -->
+      <div class="slide" data-index="6">
+        <div class="tag-badge">НАРЫҚ КӨЛЕМІ</div>
+        <div class="slide-header">
+          <h2 class="slide-title">Market Opportunity — TAM / SAM / SOM</h2>
+          <p class="slide-subtitle">Агро-геоаналитикалық бағдарламалық жасақтама мен ғарыштық мониторинг нарығы</p>
+        </div>
+
+        <div class="grid-3">
+          <div class="card">
+            <div class="tag-badge">TAM</div>
+            <div class="market-val" style="color: var(--accent-cyan);">$12.0B</div>
+            <h3 class="card-title" style="font-size: 1.15rem;">Total Addressable Market</h3>
+            <div class="card-divider"></div>
+            <p class="card-desc">Жаһандық агро-геоаналитикалық БҚ және ғарыштық мониторингтік софт нарығының жалпы халықаралық көлемі.</p>
+          </div>
+
+          <div class="card">
+            <div class="tag-badge orange">SAM</div>
+            <div class="market-val" style="color: var(--accent-orange);">$140M</div>
+            <h3 class="card-title" style="font-size: 1.15rem;">Serviceable Addressable Market</h3>
+            <div class="card-divider"></div>
+            <p class="card-desc">Орталық Азия мен ТМД өңірінің ғарыштық агро-мониторинг және шешім қабылдау жүйелері нарығы.</p>
+          </div>
+
+          <div class="card">
+            <div class="tag-badge" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); border-color: rgba(16, 185, 129, 0.3);">SOM (3 ЖЫЛ)</div>
+            <div class="market-val" style="color: var(--accent-emerald);">$1.2M</div>
+            <h3 class="card-title" style="font-size: 1.15rem;">Serviceable Obtainable Market</h3>
+            <div class="card-divider"></div>
+            <p class="card-desc">Қазақстандағы 207 элеватор мен ірі астық холдингтерінің алғашқы 3 жылдағы мақсатты нарықтық сегменті.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 7 -->
+      <div class="slide" data-index="7">
+        <div class="tag-badge">ҒЫЛЫМИ ВАЛИДАЦИЯ</div>
+        <div class="slide-header">
+          <h2 class="slide-title">BackTesting: Орбиталық деректерді тексеру</h2>
+          <p class="slide-subtitle">Солтүстік Қазақстан облысындағы тарихи деректерге жүргізілген ретроспективті эксперимент</p>
+        </div>
+
+        <div class="metric-grid-4">
+          <div class="metric-card">
+            <h3 style="color: var(--accent-cyan);">СҚО өңірі</h3>
+            <p>Сынақ полигоны</p>
+          </div>
+          <div class="metric-card">
+            <h3 style="color: var(--accent-orange);">2021 жыл</h3>
+            <p>Аномальды құрғақшылық</p>
+          </div>
+          <div class="metric-card">
+            <h3 style="color: var(--accent-emerald);">0%</h3>
+            <p>Data Leakage (Ақпарат ақпауы)</p>
+          </div>
+          <div class="metric-card">
+            <h3 style="color: var(--accent-purple);">27 күн бұрын</h3>
+            <p>Ерте анықтау нәтижесі</p>
+          </div>
+        </div>
+
+        <div class="timeline-strip">
+          <div class="step-card" style="border-left-color: var(--accent-purple);">
+            <div class="step-badge" style="background: var(--accent-purple);">Т - 27 КҮН</div>
+            <h4 style="font-size: 1.05rem; margin-bottom: 4px;">Тамыр ылғалының дағдарысы</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4;">NASA SMAP L-band радиометриясы топырақтың тамыр тереңдігінде жасырын ылғал аномалиясын тіркеді.</p>
+          </div>
+
+          <div class="step-card" style="border-left-color: var(--accent-cyan);">
+            <div class="step-badge" style="background: var(--accent-cyan); color: #000;">Т - 14 КҮН</div>
+            <h4 style="font-size: 1.05rem; margin-bottom: 4px;">Өсімдік діңінің кебуі</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4;">Sentinel-1 SAR радарлық кері шашырауы дің мен топырақ беткі қабатының күрт құрғауын растады.</p>
+          </div>
+
+          <div class="step-card" style="border-left-color: var(--accent-orange);">
+            <div class="step-badge" style="background: var(--accent-orange);">Т = 0 КҮН</div>
+            <h4 style="font-size: 1.05rem; margin-bottom: 4px;">Оптикалық сарғаю</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4;">Sentinel-2 оптикалық суреттерінде дақылдардың сарғаюы (NDVI құлдырауы) бірінші рет көрінді.</p>
+          </div>
+
+          <div class="step-card" style="border-left-color: var(--accent-rose);">
+            <div class="step-badge" style="background: var(--accent-rose);">Т + 10 КҮН</div>
+            <h4 style="font-size: 1.05rem; margin-bottom: 4px;">Ресми хабарлама & Баға шогы</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4;">Құрғақшылық ресми түрде жарияланып, биржада астық бағасының күрт өсуі орын алды.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 8 -->
+      <div class="slide" data-index="8">
+        <div class="conclusion-box">
+          <div class="tag-badge orange" style="margin: 0 auto 16px;">AGRICASCADE PROJECT 2026</div>
+          <h2 style="font-size: 3.2rem; font-weight: 800; margin-bottom: 12px;">Назар аударғандарыңызға рақмет!</h2>
+          <p style="font-size: 1.35rem; color: var(--accent-cyan); font-weight: 500; margin-bottom: 36px;">
+            Ғарыштық технологиялар арқылы азық-түлік қауіпсіздігін ерте болжау
+          </p>
+
+          <div style="display: inline-grid; grid-template-columns: 1fr 1fr; gap: 24px; text-align: left; max-width: 800px; width: 100%;">
+            <div class="card">
+              <span style="color: var(--accent-cyan); font-weight: 800; font-size: 0.85rem;">АВТОРЛАР:</span>
+              <div style="font-size: 1.25rem; font-weight: 700; margin-top: 8px;">
+                • Кәрімбай Әли<br>
+                • Төлебай Рамазан
+              </div>
+              <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;">Жоба зерттеушілері & жасақтаушылары</div>
+            </div>
+
+            <div class="card">
+              <span style="color: var(--accent-orange); font-weight: 800; font-size: 0.85rem;">ҒЫЛЫМИ ЖЕТЕКШІ:</span>
+              <div style="font-size: 1.25rem; font-weight: 700; margin-top: 8px;">
+                • Искакова Айжан (Искакова А.)
+              </div>
+              <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;">Ғылыми кеңесші & Жетекші</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottombar -->
+    <div class="deck-bottombar">
+      <button class="nav-btn" id="prevBtn" title="Алдыңғы слайд (←)">❮</button>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <button class="nav-btn" id="nextBtn" title="Келесі слайд (→ / Space)">❯</button>
+    </div>
+  </div>
+
+  <script>
+    // Orbit Stars Canvas Animation
+    const canvas = document.getElementById('space-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let stars = [];
+
+    function resizeCanvas() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      stars = [];
+      for (let i = 0; i < 140; i++) {
+        stars.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          radius: Math.random() * 1.5 + 0.5,
+          alpha: Math.random() * 0.8 + 0.2,
+          speed: Math.random() * 0.05 + 0.01
+        });
+      }
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function renderSpace() {
+      ctx.clearRect(0, 0, width, height);
+      for (let s of stars) {
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
+        ctx.fill();
+        s.alpha += (Math.random() - 0.5) * 0.02;
+        if (s.alpha < 0.1) s.alpha = 0.1;
+        if (s.alpha > 0.9) s.alpha = 0.9;
+      }
+      requestAnimationFrame(renderSpace);
+    }
+    renderSpace();
+
+    // Slides Engine
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    let currentSlide = 0;
+
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const slideIndicator = document.getElementById('slideIndicator');
+    const progressFill = document.getElementById('progressFill');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+    function updateSlide(newIndex) {
+      if (newIndex < 0 || newIndex >= totalSlides) return;
+      slides[currentSlide].classList.remove('active');
+      currentSlide = newIndex;
+      slides[currentSlide].classList.add('active');
+
+      const slideNum = currentSlide + 1;
+      slideIndicator.textContent = `0${slideNum} / 0${totalSlides}`;
+      progressFill.style.width = `${(slideNum / totalSlides) * 100}%`;
+
+      prevBtn.disabled = currentSlide === 0;
+      nextBtn.disabled = currentSlide === totalSlides - 1;
+    }
+
+    prevBtn.addEventListener('click', () => updateSlide(currentSlide - 1));
+    nextBtn.addEventListener('click', () => updateSlide(currentSlide + 1));
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        updateSlide(currentSlide + 1);
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        updateSlide(currentSlide - 1);
+      } else if (e.key === 'f' || e.key === 'F') {
+        toggleFullscreen();
+      }
+    });
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+
+    fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+    updateSlide(0);
+  </script>
+</body>
+</html>
