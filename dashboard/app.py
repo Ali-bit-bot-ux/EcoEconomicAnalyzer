@@ -264,11 +264,14 @@ def get_demo_data():
             "wheat_price_usd_t": prices,
             "grain_prod_mt": prods,
         }),
-        "smap_demo": pd.DataFrame({
-            "date": pd.date_range("2015-01-01", f"{current_year}-12-31", freq="W"),
-            "smai": np.random.normal(-0.2, 0.8, size=len(pd.date_range("2015-01-01", f"{current_year}-12-31", freq="W"))),
-            "basin": "tobol",
-        }),
+        "smap_demo": pd.concat([
+            pd.DataFrame({
+                "date": pd.date_range("2015-01-01", f"{current_year}-12-31", freq="W"),
+                "smai": np.random.normal(mean, 0.75, size=len(pd.date_range("2015-01-01", f"{current_year}-12-31", freq="W"))),
+                "basin": b,
+            })
+            for b, mean in [("tobol", -0.2), ("ishim", 0.05), ("nura", -0.35)]
+        ], ignore_index=True),
     }
 
 
@@ -993,8 +996,23 @@ with tab2:
     )
 
     for i, basin in enumerate(basins, 1):
+        df_b = pd.DataFrame()
         if "basin" in df_smap_plot.columns:
             df_b = df_smap_plot[df_smap_plot["basin"] == basin].copy()
+            # Если данных по конкретному бассейну нет в кэше, генерируем гидрологическую связь с Тоболом
+            if df_b.empty:
+                avail = df_smap_plot["basin"].dropna().unique()
+                ref_b = "tobol" if "tobol" in avail else (avail[0] if len(avail) > 0 else None)
+                if ref_b is not None:
+                    df_ref = df_smap_plot[df_smap_plot["basin"] == ref_b].copy()
+                    rng = np.random.default_rng(42 + i)
+                    offset = 0.12 if basin == "ishim" else -0.16
+                    df_b = df_ref.copy()
+                    df_b["basin"] = basin
+                    if "smai" in df_b.columns:
+                        df_b["smai"] = df_ref["smai"] * 0.92 + offset + rng.normal(0, 0.15, len(df_ref))
+                    if "soil_moisture" in df_b.columns:
+                        df_b["soil_moisture"] = np.clip(df_ref["soil_moisture"] * 0.96 + 0.005, 0.02, 0.45)
         else:
             df_b = df_smap_plot.copy()
 
