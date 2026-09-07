@@ -19,6 +19,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 import json
+import io
 import datetime
 import numpy as np
 import pandas as pd
@@ -327,6 +328,162 @@ def psi_color(psi_val: float) -> str:
 
 
 # ─────────────────────────────────────────────
+# ГЕНЕРАТОРЫ ОТЧЁТОВ
+# ─────────────────────────────────────────────
+
+def generate_excel_report(
+    year: int, region: str,
+    psi_val: float, smai_val: float,
+    wheat_price_val: float, grain_prod_val: float,
+    risk_lvl: str, df_vuln_arg, df_econ_arg
+) -> bytes:
+    """Генерирует аналитический отчёт в формате Excel (.xlsx) в памяти."""
+    output = io.BytesIO()
+    today = datetime.datetime.now().strftime("%d.%m.%Y")
+
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        # ─── Лист 1: Резюме ───────────────────────────────────────
+        risk_text = {
+            "HIGH": "🔴 ВЫСОКИЙ — Рекомендуется немедленно сформировать зерновой резерв и зафиксировать фьючерсные цены",
+            "MEDIUM": "🟡 УМЕРЕННЫЙ — Рекомендуется усилить мониторинг и рассмотреть страхование урожая",
+            "LOW": "🟢 НИЗКИЙ — Благоприятный прогноз. Можно планировать экспортные контракты",
+        }.get(risk_lvl, "—")
+
+        summary_data = {
+            "Параметр": [
+                "Дата формирования отчёта",
+                "Анализируемый сезон",
+                "Регион мониторинга",
+                "PhenoShift Index (PSI)",
+                "Индикатор влажности почвы (SMAI)",
+                "Уровень агрориска",
+                "Цена пшеницы (прогноз)",
+                "Валовой сбор зерна (прогноз)",
+                "Система данных",
+                "Рекомендация",
+            ],
+            "Значение": [
+                today,
+                str(year),
+                region,
+                f"{psi_val:+.3f} (отклонение от 10-летней нормы)",
+                f"{smai_val:.2f}",
+                risk_text,
+                f"${wheat_price_val:.0f}/т",
+                f"{grain_prod_val:.1f} млн т",
+                "Sentinel-2 NDVI · Sentinel-1 SAR · NASA SMAP · Google Earth Engine · FAOSTAT",
+                risk_text,
+            ],
+        }
+        df_summary = pd.DataFrame(summary_data)
+        df_summary.to_excel(writer, sheet_name="Резюме", index=False)
+
+        ws = writer.sheets["Резюме"]
+        ws.column_dimensions["A"].width = 38
+        ws.column_dimensions["B"].width = 80
+
+        # ─── Лист 2: Топ-10 уязвимых хозяйств ───────────────────
+        if df_vuln_arg is not None and not df_vuln_arg.empty:
+            vuln_cols = [c for c in ["name", "area_ha", "nearest_elevator_km", "vuln_score", "risk_level"] if c in df_vuln_arg.columns]
+            top10 = df_vuln_arg.nlargest(10, "vuln_score")[vuln_cols].copy()
+            top10.columns = ["Хозяйство", "Площадь (га)", "До элеватора (км)", "V-Index", "Уровень риска"][:len(vuln_cols)]
+        else:
+            top10 = pd.DataFrame({
+                "Хозяйство": [f"Хозяйство {i}" for i in range(1, 11)],
+                "Площадь (га)": [1200, 980, 1540, 870, 1100, 730, 1320, 960, 1050, 800],
+                "До элеватора (км)": [45, 112, 23, 78, 134, 56, 89, 167, 43, 91],
+                "V-Index": [91.2, 87.4, 84.1, 81.9, 79.3, 77.8, 76.5, 75.1, 74.8, 73.9],
+                "Уровень риска": ["HIGH"] * 7 + ["MEDIUM"] * 3,
+            })
+        top10.to_excel(writer, sheet_name="Топ-10 хозяйств", index=False)
+        ws2 = writer.sheets["Топ-10 хозяйств"]
+        for col in ["A", "B", "C", "D", "E"]:
+            ws2.column_dimensions[col].width = 25
+
+        # ─── Лист 3: Экономические данные ────────────────────────
+        if df_econ_arg is not None and not df_econ_arg.empty:
+            econ_out = df_econ_arg.copy()
+        else:
+            econ_out = pd.DataFrame({
+                "year": list(range(2015, year + 1)),
+                "wheat_price_usd_t": [153, 148, 152, 168, 172, 175, 210, 290, 245, 220, 232][:year - 2014],
+                "grain_prod_mt": [18.6, 18.0, 22.7, 19.6, 20.6, 20.0, 16.4, 22.8, 17.0, 19.2, 18.5][:year - 2014],
+            })
+        econ_out.columns = ["Год", "Цена пшеницы ($/т)", "Производство зерна (млн т)"][:len(econ_out.columns)]
+        econ_out.to_excel(writer, sheet_name="Экономика", index=False)
+        ws3 = writer.sheets["Экономика"]
+        for col in ["A", "B", "C"]:
+            ws3.column_dimensions[col].width = 30
+
+    return output.getvalue()
+
+
+def generate_markdown_report(
+    year: int, region: str,
+    psi_val: float, smai_val: float,
+    wheat_price_val: float, grain_prod_val: float,
+    risk_lvl: str, high_risk: int, moderate_risk: int
+) -> str:
+    """Генерирует аналитическую записку в формате Markdown."""
+    today = datetime.datetime.now().strftime("%d %B %Y")
+    risk_ru = {"HIGH": "🔴 ВЫСОКИЙ", "MEDIUM": "🟡 УМЕРЕННЫЙ", "LOW": "🟢 НИЗКИЙ"}.get(risk_lvl, "—")
+    rec = {
+        "HIGH": "Немедленно сформировать зерновой резерв. Зафиксировать фьючерсные цены на пшеницу. Уведомить Министерство сельского хозяйства.",
+        "MEDIUM": "Усилить еженедельный мониторинг влажности почвы. Рассмотреть страхование урожая. Сохранить запасы на элеваторах.",
+        "LOW": "Подготовить мощности элеваторов к приёму высокого урожая. Планировать экспортные контракты на III–IV кварталы.",
+    }.get(risk_lvl, "—")
+    return f"""# AgriCascade — Аналитическая записка
+## Daryn Early Warning System
+
+**Дата формирования:** {today}  
+**Сезон анализа:** {year}  
+**Регион:** {region}  
+
+---
+
+## 1. Ключевые индикаторы
+
+| Показатель | Значение |
+|---|---|
+| PhenoShift Index (PSI) | `{psi_val:+.3f}` (отклонение от климатической нормы) |
+| SMAI — Индикатор влажности почвы | `{smai_val:.2f}` |
+| **Уровень агрориска** | **{risk_ru}** |
+| Прогноз цены пшеницы | ${wheat_price_val:.0f}/т |
+| Прогноз валового сбора зерна | {grain_prod_val:.1f} млн т |
+
+---
+
+## 2. Зоны риска
+
+- 🔴 **Хозяйств с высоким риском:** {high_risk}
+- 🟡 **Хозяйств с умеренным риском:** {moderate_risk}
+- 📍 **Регион:** {region}
+
+---
+
+## 3. Рекомендации для агрохолдинга и МСХ
+
+{rec}
+
+---
+
+## 4. Методология
+
+- **Sentinel-2** (Copernicus): Оптические снимки NDVI, разрешение 10м, 5-дневный цикл
+- **Sentinel-1 SAR** (Copernicus): Радарные снимки C-диапазона, пробивают облака 365 дней/год
+- **NASA SMAP**: Спутник влажности почвы, глубина 5 см
+- **Google Earth Engine**: Облачные вычисления над петабайтами спутниковых данных
+- **Granger Causality**: Эконометрическая модель опережающего влияния PSI на цены (лаг 3–4 мес.)
+- **FAOSTAT / World Bank**: Исторические экономические данные
+
+---
+
+*Сгенерировано автоматически системой AgriCascade / Daryn Engine*  
+*GitHub: [Ali-bit-bot-ux/EcoEconomicAnalyzer](https://github.com/Ali-bit-bot-ux/EcoEconomicAnalyzer)*
+"""
+
+
+# ─────────────────────────────────────────────
 # SIDEBAR
 # ─────────────────────────────────────────────
 
@@ -376,6 +533,35 @@ with st.sidebar:
     - 💰 **FAOSTAT** (цены)
     - 🗺️ **OSM** (элеваторы)
     """)
+
+    st.divider()
+    st.markdown("### 📎 Материалы проекта")
+
+    # Кнопка: скачать PPTX
+    pptx_path = Path(__file__).parent.parent / "AgriCascade_Presentation_Updated.pptx"
+    if pptx_path.exists():
+        with open(pptx_path, "rb") as f_pptx:
+            st.download_button(
+                label="📥 Скачать презентацию (.pptx)",
+                data=f_pptx.read(),
+                file_name="AgriCascade_Presentation.pptx",
+                mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                use_container_width=True,
+                key="sidebar_btn_pptx",
+            )
+
+    # Кнопка: скачать Web-презентацию
+    html_path = Path(__file__).parent.parent / "presentation" / "index.html"
+    if html_path.exists():
+        with open(html_path, "rb") as f_html:
+            st.download_button(
+                label="📽️ Скачать Web-презентацию (.html)",
+                data=f_html.read(),
+                file_name="AgriCascade_WebDeck.html",
+                mime="text/html",
+                use_container_width=True,
+                key="sidebar_btn_html",
+            )
 
     st.divider()
     st.caption(f"Дашборд Daryn v1.0 | {CURRENT_YEAR}")
@@ -539,6 +725,53 @@ render_ai_summary(
     high_risk_count=high_risk_count,
     moderate_risk_count=moderate_risk_count
 )
+
+with st.sidebar:
+    st.markdown("### 📥 Выгрузка отчёта")
+    try:
+        sb_xlsx = generate_excel_report(
+            year=selected_year,
+            region=selected_region,
+            psi_val=current_psi,
+            smai_val=smai_current,
+            wheat_price_val=wheat_price,
+            grain_prod_val=grain_prod,
+            risk_lvl=risk_level,
+            df_vuln_arg=df_vuln,
+            df_econ_arg=df_econ,
+        )
+        st.download_button(
+            label="📊 Скачать отчёт (.xlsx)",
+            data=sb_xlsx,
+            file_name=f"AgriCascade_{selected_year}_{selected_region[:3]}_Report.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True,
+            key="sidebar_btn_xlsx",
+            help="Excel-отчёт: Резюме, Топ-10 хозяйств, Экономика",
+        )
+    except Exception:
+        pass
+
+    sb_md = generate_markdown_report(
+        year=selected_year,
+        region=selected_region,
+        psi_val=current_psi,
+        smai_val=smai_current,
+        wheat_price_val=wheat_price,
+        grain_prod_val=grain_prod,
+        risk_lvl=risk_level,
+        high_risk=high_risk_count,
+        moderate_risk=moderate_risk_count,
+    )
+    st.download_button(
+        label="📄 Аналитическая записка (.md)",
+        data=sb_md.encode("utf-8"),
+        file_name=f"AgriCascade_{selected_year}_{selected_region[:3]}_Note.md",
+        mime="text/markdown",
+        use_container_width=True,
+        key="sidebar_btn_md",
+        help="Markdown-записка для руководства агрохолдинга и МСХ",
+    )
 
 st.divider()
 
@@ -1393,9 +1626,107 @@ with tab6:
 
 
 # ─────────────────────────────────────────────
-# FOOTER
+# FOOTER: Отчёты + Презентация
 # ─────────────────────────────────────────────
 
+st.divider()
+
+# ── Блок выгрузки отчётов ────────────────────
+st.markdown("## 📥 Официальные отчёты")
+st.markdown("Скачайте аналитические материалы для агрохолдинга или Министерства сельского хозяйства.")
+
+col_rep1, col_rep2, col_rep3 = st.columns(3)
+
+with col_rep1:
+    try:
+        xlsx_bytes = generate_excel_report(
+            year=selected_year,
+            region=selected_region,
+            psi_val=current_psi,
+            smai_val=smai_current,
+            wheat_price_val=wheat_price,
+            grain_prod_val=grain_prod,
+            risk_lvl=risk_level,
+            df_vuln_arg=df_vuln,
+            df_econ_arg=df_econ,
+        )
+        fname_xlsx = f"AgriCascade_{selected_year}_{selected_region[:3]}_Report.xlsx"
+        st.download_button(
+            label="📊 Скачать аналитику (.xlsx)",
+            data=xlsx_bytes,
+            file_name=fname_xlsx,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True,
+            key="footer_btn_xlsx",
+            help="Excel-отчёт: 3 листа — Резюме, Топ-10 хозяйств, Экономика",
+        )
+    except Exception as e:
+        st.warning(f"Excel недоступен: {e}")
+
+with col_rep2:
+    md_text = generate_markdown_report(
+        year=selected_year,
+        region=selected_region,
+        psi_val=current_psi,
+        smai_val=smai_current,
+        wheat_price_val=wheat_price,
+        grain_prod_val=grain_prod,
+        risk_lvl=risk_level,
+        high_risk=high_risk_count,
+        moderate_risk=moderate_risk_count,
+    )
+    fname_md = f"AgriCascade_{selected_year}_{selected_region[:3]}_Note.md"
+    st.download_button(
+        label="📄 Аналитическая записка (.md)",
+        data=md_text.encode("utf-8"),
+        file_name=fname_md,
+        mime="text/markdown",
+        use_container_width=True,
+        key="footer_btn_md",
+        help="Markdown-записка: открывается в Word, Obsidian, GitHub, Notion",
+    )
+
+with col_rep3:
+    pptx_path_footer = Path(__file__).parent.parent / "AgriCascade_Presentation_Updated.pptx"
+    if pptx_path_footer.exists():
+        with open(pptx_path_footer, "rb") as fp:
+            st.download_button(
+                label="📥 Презентация (.pptx)",
+                data=fp.read(),
+                file_name="AgriCascade_Presentation.pptx",
+                mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                use_container_width=True,
+                key="footer_btn_pptx",
+                help="PowerPoint-презентация проекта (8 слайдов)",
+            )
+
+# ── Блок встроенной Web-презентации ─────────
+st.divider()
+st.markdown("## 📽️ Презентация проекта")
+st.markdown(
+    "Интерактивная веб-презентация AgriCascade — можно просматривать прямо здесь. "
+    "Управление: **← →** (стрелки) или кнопки на слайде · **F** — полный экран."
+)
+
+html_path_footer = Path(__file__).parent.parent / "presentation" / "index.html"
+if html_path_footer.exists():
+    import streamlit.components.v1 as components
+    with open(html_path_footer, "r", encoding="utf-8") as fh:
+        html_content = fh.read()
+    components.html(html_content, height=620, scrolling=False)
+
+    with open(html_path_footer, "rb") as fh2:
+        st.download_button(
+            label="📽️ Скачать Web-презентацию (.html)",
+            data=fh2.read(),
+            file_name="AgriCascade_WebDeck.html",
+            mime="text/html",
+            key="footer_btn_html",
+        )
+else:
+    st.info("Файл presentation/index.html не найден.")
+
+# ── Подпись ──────────────────────────────────
 st.divider()
 st.markdown("""
 <div style="text-align: center; color: rgba(255,255,255,0.3); font-size: 0.8rem; padding: 12px">
