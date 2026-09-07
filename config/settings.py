@@ -74,13 +74,14 @@ SYRDARYA_UPSTREAM = [
     [69.0, 40.0],
 ]
 
-# ─────────────────────────────────────────────
+import datetime
+
 # Временные параметры анализа
 # ─────────────────────────────────────────────
 ANALYSIS_START_YEAR = 2015       # Начало: доступен Sentinel-2
-ANALYSIS_END_YEAR = 2025         # Конец: текущий год
-BASELINE_YEARS = list(range(2015, 2024))  # 10 лет для нормы
-CURRENT_YEAR = 2024              # Год, который сравниваем с нормой
+CURRENT_YEAR = datetime.datetime.now().year  # Текущий календарный год в реальном времени
+ANALYSIS_END_YEAR = CURRENT_YEAR
+BASELINE_YEARS = list(range(2015, CURRENT_YEAR))  # Климатическая норма до текущего года
 
 # Вегетационный период (DOY — день года)
 VEGETATION_DOY_START = 120       # ~30 апреля

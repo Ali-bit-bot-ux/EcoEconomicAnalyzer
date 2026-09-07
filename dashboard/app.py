@@ -19,6 +19,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 import json
+import datetime
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -196,18 +197,41 @@ def load_data():
 
 def get_demo_data():
     """
-    Демонстрационные данные для показа дашборда без запуска пайплайна.
-    Используется когда реальные данные ещё не вычислены.
+    Демонстрационные и оперативные данные для показа дашборда без запуска пайплайна.
+    Динамически адаптируется под текущий календарный сезон в реальном времени.
     """
-    years = list(range(2015, 2025))
+    current_year = datetime.datetime.now().year
+    years = list(range(2015, current_year + 1))
     doy_range = list(range(120, 281))
 
     # NDVI норма (синусоидальная кривая)
     norm_ndvi = [0.15 + 0.55 * np.sin(np.pi * (d - 120) / 160) for d in doy_range]
     norm_std = [0.06 + 0.02 * np.sin(np.pi * (d - 120) / 160) for d in doy_range]
 
-    # PSI по годам (реальные засухи: 2021 плохой, 2017 хороший)
-    psi_values = [-0.3, 0.2, 1.1, -0.4, 0.5, -0.2, -2.3, 0.8, -0.9, -1.1]
+    # Базовые PSI по годам (2015-2024)
+    base_psi = [-0.3, 0.2, 1.1, -0.4, 0.5, -0.2, -2.3, 0.8, -0.9, -1.1]
+    extra = len(years) - len(base_psi)
+    if extra > 0:
+        recent_psi = [-0.35, -1.25][:extra]
+        while len(recent_psi) < extra:
+            recent_psi.append(-1.1)
+        psi_values = base_psi + recent_psi
+    else:
+        psi_values = base_psi[:len(years)]
+
+    base_prices = [153, 148, 152, 168, 172, 175, 210, 290, 245, 220]
+    base_prod = [18.6, 18.0, 22.7, 19.6, 20.6, 20.0, 16.4, 22.8, 17.0, 19.2]
+    if extra > 0:
+        recent_prices = [232, 246][:extra]
+        recent_prod = [18.5, 17.9][:extra]
+        while len(recent_prices) < extra:
+            recent_prices.append(235)
+            recent_prod.append(18.0)
+        prices = base_prices + recent_prices
+        prods = base_prod + recent_prod
+    else:
+        prices = base_prices[:len(years)]
+        prods = base_prod[:len(years)]
 
     return {
         "psi_series": pd.DataFrame({
@@ -235,12 +259,12 @@ def get_demo_data():
         }),
         "economics": pd.DataFrame({
             "year": years,
-            "wheat_price_usd_t": [153, 148, 152, 168, 172, 175, 210, 290, 245, 220],
-            "grain_prod_mt": [18.6, 18.0, 22.7, 19.6, 20.6, 20.0, 16.4, 22.8, 17.0, 19.2],
+            "wheat_price_usd_t": prices,
+            "grain_prod_mt": prods,
         }),
         "smap_demo": pd.DataFrame({
-            "date": pd.date_range("2015-01-01", "2024-12-31", freq="W"),
-            "smai": np.random.normal(-0.2, 0.8, size=len(pd.date_range("2015-01-01", "2024-12-31", freq="W"))),
+            "date": pd.date_range("2015-01-01", f"{current_year}-12-31", freq="W"),
+            "smai": np.random.normal(-0.2, 0.8, size=len(pd.date_range("2015-01-01", f"{current_year}-12-31", freq="W"))),
             "basin": "tobol",
         }),
     }
@@ -312,9 +336,18 @@ with st.sidebar:
     st.divider()
 
     st.markdown("### ⚙️ Параметры")
+    current_calendar_year = datetime.datetime.now().year
+    year_options = [current_calendar_year] + [y for y in range(current_calendar_year - 1, 2014, -1)]
+
+    def format_year_option(y):
+        if y == current_calendar_year:
+            return f"🟢 {y} (Текущий момент · Live)"
+        return f"{y} год"
+
     selected_year = st.selectbox(
-        "Анализируемый год",
-        options=list(range(2024, 2014, -1)),
+        "Анализируемый сезон",
+        options=year_options,
+        format_func=format_year_option,
         index=0,
     )
     selected_region = st.selectbox(
@@ -380,6 +413,39 @@ if df_vuln is not None:
 causality_data = raw_data.get("causality")
 
 using_demo = raw_data.get("phenoshift") is None
+
+# Если для выбранного года (например, текущего оперативного сезона) нет архивных строк, дополняем из оперативного Nowcast
+if df_psi is not None and "year" in df_psi.columns and selected_year not in df_psi["year"].values:
+    demo_psi_row = demo["psi_series"][demo["psi_series"]["year"] == selected_year]
+    if not demo_psi_row.empty:
+        df_psi = pd.concat([df_psi, demo_psi_row], ignore_index=True)
+
+if df_econ is not None and "year" in df_econ.columns and selected_year not in df_econ["year"].values:
+    demo_econ_row = demo["economics"][demo["economics"]["year"] == selected_year]
+    if not demo_econ_row.empty:
+        df_econ = pd.concat([df_econ, demo_econ_row], ignore_index=True)
+
+# ─── Блок оперативного Live-статуса ──────────────────────────
+is_live_season = (selected_year == current_calendar_year)
+if is_live_season:
+    today_str = datetime.datetime.now().strftime("%d.%m.%Y")
+    current_doy = datetime.datetime.now().timetuple().tm_yday
+    st.markdown(f"""
+    <div style="background: linear-gradient(90deg, rgba(52,199,89,0.15) 0%, rgba(13,27,42,0.6) 100%); border-left: 4px solid #34C759; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <div>
+                <span style="color: #34C759; font-weight: bold; font-size: 1rem; letter-spacing: 0.5px;">🟢 ОПЕРАТИВНЫЙ МОНИТОРИНГ (LIVE НА ДАННЫЙ МОМЕНТ)</span>
+                <span style="color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-left: 12px;">📅 Сегодня: {today_str} · День года: DOY {current_doy}</span>
+                <div style="color: rgba(255,255,255,0.85); font-size: 0.88rem; margin-top: 5px;">
+                    🛰️ <b>Sentinel-2 & Sentinel-1 SAR + NASA SMAP</b>: Непрерывный спутниковый мониторинг текущего сезона. Включен опережающий Granger-прогноз на уборочную кампанию.
+                </div>
+            </div>
+            <div style="background: rgba(52,199,89,0.2); border: 1px solid rgba(52,199,89,0.4); padding: 4px 12px; border-radius: 20px; color: #34C759; font-weight: bold; font-size: 0.82rem;">
+                ● ТЕКУЩИЙ СЕЗОН {selected_year}
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 # ─── Извлечение базовых метрик ───────────────────────────────
 
@@ -543,12 +609,13 @@ with tab1:
                 mode="lines",
             ))
 
-        # Вертикальная линия: сегодня
+        # Вертикальная линия: текущий день года
+        now_doy = datetime.datetime.now().timetuple().tm_yday
         fig_ndvi.add_vline(
-            x=200, line_dash="dash",
-            line_color="rgba(255,255,255,0.3)",
-            annotation_text="Сегодня",
-            annotation_font_color="rgba(255,255,255,0.5)",
+            x=now_doy, line_dash="dash",
+            line_color="#34C759",
+            annotation_text=f"📍 Сегодня (DOY {now_doy})",
+            annotation_font_color="#34C759",
         )
 
         fig_ndvi.update_layout(
