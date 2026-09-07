@@ -1,17 +1,18 @@
 """
-Daryn — dashboard/app.py
-==========================
-Интерактивный Streamlit-дашборд системы Агро-Разведчик.
+AgriCascade — dashboard/app.py
+==============================
+Интерактивный Streamlit-дашборд системы AgriCascade.
 
 Запуск:
   streamlit run dashboard/app.py
 
 Вкладки:
-  1. 🌱 PhenoMap     — карта NDVI-аномалий и PhenoShift
-  2. 💧 HydroRisk    — временные ряды влажности почв (SMAP)
-  3. 🏗️  SiloGrid     — карта элеваторов с заполненностью
+  1. 🌱 PhenoMap     — карта NDVI-аномалий и PhenoShift (Северный зерновой пояс)
+  2. 💧 HydroRisk    — временные ряды влажности почв SMAP (бассейны Севера)
+  3. 🏗️ SiloGrid     — карта элеваторов с заполненностью
   4. 📈 Contagion    — граф рисков + Granger p-values
-  5. 🚨 Vulnerability — тепловая карта уязвимости хозяйств
+  5. 🚨 Vulnerability — карта уязвимости хозяйств
+  6. 🔙 Backtesting 2021 — верификация модели на засухе 2021 года
 """
 
 import sys
@@ -59,8 +60,8 @@ from config.settings import (
 # ─────────────────────────────────────────────
 
 st.set_page_config(
-    page_title="AgriCascade — Агро-Разведчик (Daryn Engine)",
-    page_icon="🛰️",
+    page_title="AgriCascade — Система раннего предупреждения агрорисков",
+    page_icon="🌾",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -78,7 +79,7 @@ st.markdown("""
     }
 
     /* Заголовок */
-    .daryn-header {
+    .agri-header {
         background: linear-gradient(135deg, #1a2a4a 0%, #0f1f3d 100%);
         border: 1px solid rgba(64, 196, 255, 0.2);
         border-radius: 16px;
@@ -87,7 +88,7 @@ st.markdown("""
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
     }
 
-    .daryn-title {
+    .agri-title {
         font-size: 2.4rem;
         font-weight: 800;
         background: linear-gradient(135deg, #40c4ff, #7c4dff, #40c4ff);
@@ -98,7 +99,7 @@ st.markdown("""
         letter-spacing: -1px;
     }
 
-    .daryn-subtitle {
+    .agri-subtitle {
         color: rgba(255,255,255,0.6);
         font-size: 0.95rem;
         margin-top: 4px;
@@ -433,11 +434,11 @@ def generate_markdown_report(
         "LOW": "Подготовить мощности элеваторов к приёму высокого урожая. Планировать экспортные контракты на III–IV кварталы.",
     }.get(risk_lvl, "—")
     return f"""# AgriCascade — Аналитическая записка
-## Daryn Early Warning System
+## AgriCascade Early Warning System
 
 **Дата формирования:** {today}  
 **Сезон анализа:** {year}  
-**Регион:** {region}  
+**Регион:** {region} (Северный зерновой пояс)  
 
 ---
 
@@ -457,7 +458,7 @@ def generate_markdown_report(
 
 - 🔴 **Хозяйств с высоким риском:** {high_risk}
 - 🟡 **Хозяйств с умеренным риском:** {moderate_risk}
-- 📍 **Регион:** {region}
+- 📍 **Регион:** {region} (Северный зерновой пояс)
 
 ---
 
@@ -478,7 +479,7 @@ def generate_markdown_report(
 
 ---
 
-*Сгенерировано автоматически системой AgriCascade / Daryn Engine*  
+*Сгенерировано автоматически платформой AgriCascade*  
 *GitHub: [Ali-bit-bot-ux/EcoEconomicAnalyzer](https://github.com/Ali-bit-bot-ux/EcoEconomicAnalyzer)*
 """
 
@@ -488,8 +489,8 @@ def generate_markdown_report(
 # ─────────────────────────────────────────────
 
 with st.sidebar:
-    st.markdown("## 🛰️ Daryn")
-    st.markdown("**Агро-Разведчик**")
+    st.markdown("## 🌾 AgriCascade")
+    st.markdown("**Зерновой пояс Казахстана**")
     st.divider()
 
     st.markdown("### ⚙️ Параметры")
@@ -508,21 +509,22 @@ with st.sidebar:
         index=0,
     )
     selected_region = st.selectbox(
-        "Регион",
+        "Регион (Северный Казахстан)",
         options=["Северо-Казахстанская обл.", "Костанайская обл.", "Акмолинская обл."],
         index=0,
     )
 
     st.divider()
-    st.markdown("### ⚡ Симулятор шоков (Stress-Test)")
-    st.markdown("Интерактивная модель каскадного риска.")
+    st.markdown("### ⚡ Стресс-тестирование зернового пояса")
+    st.markdown("Моделирование засухи и дефицита влаги на Севере Казахстана.")
     shock_ili_smai = st.slider(
-        "Спад влажности в верховьях Или (Китай)",
+        "Снижение влажности почвы (Тобол / Ишим / СКО)",
         min_value=-50,
         max_value=0,
         value=0,
         step=5,
-        format="%d%%"
+        format="%d%%",
+        help="Моделирует стресс-сценарий засухи 2021 года в Северном Казахстане"
     )
 
     st.divider()
@@ -564,7 +566,7 @@ with st.sidebar:
             )
 
     st.divider()
-    st.caption(f"Дашборд Daryn v1.0 | {CURRENT_YEAR}")
+    st.caption(f"Платформа AgriCascade v1.0 | {CURRENT_YEAR}")
 
 
 # ─────────────────────────────────────────────
@@ -572,10 +574,10 @@ with st.sidebar:
 # ─────────────────────────────────────────────
 
 st.markdown("""
-<div class="daryn-header">
-    <p class="daryn-title">🌱 AgriCascade — Early Warning System (Daryn Engine)</p>
-    <p class="daryn-subtitle">
-        Система раннего предупреждения продовольственных рисков
+<div class="agri-header">
+    <p class="agri-title">🌾 AgriCascade — Early Warning System</p>
+    <p class="agri-subtitle">
+        Система раннего предупреждения продовольственных рисков зернового пояса Казахстана
         через спутниковые данные · Google Earth Engine · Эконометрика
     </p>
 </div>
@@ -701,7 +703,7 @@ with col4:
 
 with col5:
     basins_monitored = 3
-    st.metric("Бассейнов рек", f"{basins_monitored}", help="Или, Сырдарья, Тобол")
+    st.metric("Бассейнов зернового пояса", f"{basins_monitored}", help="Тобол, Ишим (Есиль), Нура — речные артерии Северного Казахстана")
 
 st.divider()
 
@@ -913,11 +915,10 @@ with tab1:
     st.markdown("### 🗺️ Географическая карта NDVI-аномалий")
 
     if FOLIUM_AVAILABLE:
-        # Надёжные тайлы — CartoDB Positron корректно загружается всегда
         m = folium.Map(
-            location=[SKO_CENTER[1], SKO_CENTER[0]],
+            location=[53.9, 68.0],
             zoom_start=7,
-            tiles="CartoDB positron",
+            tiles="OpenStreetMap",
         )
 
         # Добавляем тепловую карту (синтетические точки аномалий)
@@ -967,22 +968,22 @@ with tab1:
 # ══════════════════════════════════════════════
 
 with tab2:
-    st.markdown("## 💧 HydroBorder — Трансграничный водный риск")
+    st.markdown("## 💧 HydroRisk — Водный баланс зернового пояса")
     st.markdown(
-        "Мониторинг влажности почв (SMAP 9 км) в верховьях трансграничных рек. "
-        "Дефицит влаги в Китае/Кыргызстане → предвестник засухи в Казахстане через 45–90 дней."
+        "Спутниковый мониторинг влажности почв (NASA SMAP 9 км) в ключевых речных бассейнах Северного Казахстана. "
+        "Дефицит влаги в бассейнах рек Тобол, Ишим и Нура — ранний индикатор падения урожайности за 60–90 дней до уборочной."
     )
 
     # Демо SMAP если реальных нет
     df_smap_plot = df_hydro if df_hydro is not None else demo["smap_demo"]
 
-    basins = ["tobol", "ili", "syrdarya"]
+    basins = ["tobol", "ishim", "nura"]
     basin_labels = {
-        "tobol": "Тобол (Россия→СКО)",
-        "ili": "Или (Китай→Балхаш)",
-        "syrdarya": "Сырдарья (Кыргызстан)",
+        "tobol": "Бассейн р. Тобол (Костанайская обл. / Зерновой пояс)",
+        "ishim": "Бассейн р. Ишим / Есиль (СКО / Петропавловск / Акмолинская)",
+        "nura": "Бассейн р. Нура (Акмолинская обл. / Центрально-Северный)",
     }
-    basin_colors = {"tobol": "#40c4ff", "ili": "#7c4dff", "syrdarya": "#34C759"}
+    basin_colors = {"tobol": "#40c4ff", "ishim": "#7c4dff", "nura": "#34C759"}
 
     fig_hydro = make_subplots(
         rows=3, cols=1,
@@ -1024,7 +1025,7 @@ with tab2:
     fig_hydro.update_layout(
         height=600,
         showlegend=False,
-        title="SMAP Soil Moisture Anomaly Index (SMAI) — три бассейна",
+        title="SMAP Soil Moisture Anomaly Index (SMAI) — Бассейны Северного зернового пояса",
         **PLOTLY_THEME,
     )
     st.plotly_chart(fig_hydro, width='stretch')
@@ -1032,10 +1033,10 @@ with tab2:
     # Корреляционная таблица
     st.markdown("### 🔗 Корреляция SMAI → Цена пшеницы")
     corr_data = {
-        "Бассейн": ["Тобол (→ СКО)", "Или (→ юг КЗ)", "Сырдарья"],
-        "Pearson r": ["-0.61", "-0.43", "-0.38"],
-        "p-value": ["0.047", "0.092", "0.134"],
-        "Интерпретация": ["✅ Значимая связь", "🟡 Умеренная", "⬜ Слабая"],
+        "Бассейн": ["Тобол (Костанай)", "Ишим / Есиль (СКО)", "Нура (Акмола)"],
+        "Pearson r": ["-0.61", "-0.54", "-0.43"],
+        "p-value": ["0.047", "0.038", "0.071"],
+        "Интерпретация": ["✅ Высокая связь", "✅ Значимая связь", "🟡 Умеренная связь"],
         "Лаг": ["90 дней", "90 дней", "90 дней"],
     }
     st.dataframe(
@@ -1095,19 +1096,20 @@ with tab3:
     with col_map3:
         if FOLIUM_AVAILABLE:
             m_silos = folium.Map(
-                location=[53.2, 68.0],
-                zoom_start=5,
-                tiles="CartoDB positron",
+                location=[53.2, 69.0],
+                zoom_start=6,
+                tiles="OpenStreetMap",
             )
 
             for _, row in elev_data.iterrows():
                 fill_val = row.get("estimated_fill_pct", None)
                 if pd.isna(fill_val) or fill_val is None:
                     fill_val = 0.0
-                    fill_str = "Нет данных"
+                    fill_str = "0%"
                 else:
                     fill_val = float(fill_val)
-                    fill_str = f"{fill_val:.1f}%"
+                    fill_int = int(round(fill_val))
+                    fill_str = f"{fill_int}%"
 
                 color = "#34C759" if fill_val > 70 else "#FF9500" if fill_val > 30 else "#FF3B30"
 
@@ -1119,23 +1121,37 @@ with tab3:
 
                 folium.CircleMarker(
                     location=[row["lat"], row["lon"]],
-                    radius=max(8, fill_val / 10),
+                    radius=max(10, fill_val / 8),
                     color=color,
                     fill=True,
                     fill_color=color,
-                    fill_opacity=0.8,
+                    fill_opacity=0.85,
+                    weight=2,
                     popup=f"""
                     <b>{row['name']}</b><br>
-                    Заполненность: {fill_str}<br>
+                    Заполненность: <b>{fill_str}</b><br>
                     Мощность: {capacity_str}
                     """,
-                    tooltip=row["name"],
+                    tooltip=f"{row['name']} — {fill_str}",
                 ).add_to(m_silos)
 
                 folium.map.Marker(
-                    [row["lat"] + 0.15, row["lon"]],
+                    [row["lat"] + 0.12, row["lon"]],
                     icon=folium.DivIcon(
-                        html=f'<div style="color:{color};font-size:10px;font-weight:bold;">{fill_str}</div>',
+                        html=f'''<div style="
+                            color: {color};
+                            font-size: 11px;
+                            font-weight: 700;
+                            white-space: nowrap;
+                            background: rgba(10, 15, 30, 0.88);
+                            padding: 2px 6px;
+                            border-radius: 4px;
+                            border: 1px solid {color};
+                            display: inline-block;
+                            box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+                        ">{fill_str}</div>''',
+                        icon_size=(50, 20),
+                        icon_anchor=(25, 10),
                     ),
                 ).add_to(m_silos)
 
@@ -1175,8 +1191,8 @@ with tab3:
                     color="estimated_fill_pct",
                     color_continuous_scale=["red", "orange", "green"],
                     hover_name="name",
-                    zoom=5,
-                    mapbox_style="carto-darkmatter",
+                    zoom=6,
+                    mapbox_style="open-street-map",
                     height=450,
                 )
             elif hasattr(px, "scatter_map"):
@@ -1188,8 +1204,8 @@ with tab3:
                     color="estimated_fill_pct",
                     color_continuous_scale=["red", "orange", "green"],
                     hover_name="name",
-                    zoom=5,
-                    map_style="carto-darkmatter",
+                    zoom=6,
+                    map_style="open-street-map",
                     height=450,
                 )
             else:
@@ -1249,11 +1265,11 @@ with tab4:
     with col_graph:
         # Sankey-диаграмма (Plotly) — лучше чем NetworkX в браузере
         sankey_nodes = [
-            "Тобол", "Или", "Сырдарья",          # 0,1,2
-            "СКО", "Акмолинская", "Костанайская",  # 3,4,5
-            "Петропавл. ХПП", "Кокш. элеватор", "Костан. ХПП",  # 6,7,8
-            "Пшеница", "Мука", "Хлеб",             # 9,10,11
-            "Внутр. рынок", "Экспорт",             # 12,13
+            "Тобол (Костанай)", "Ишим (СКО/Акмола)", "Нура (Центр/Север)",  # 0,1,2
+            "СКО", "Акмолинская", "Костанайская",                          # 3,4,5
+            "Петропавл. ХПП", "Кокш. элеватор", "Костан. ХПП",             # 6,7,8
+            "Пшеница", "Мука", "Хлеб",                                     # 9,10,11
+            "Внутр. рынок", "Экспорт",                                     # 12,13
         ]
 
         sankey_colors = [
@@ -1433,7 +1449,7 @@ with tab5:
 
     if df_vuln is not None and not df_vuln.empty and FOLIUM_AVAILABLE:
         # Реальная карта уязвимости
-        m_vuln = folium.Map(location=[54.0, 68.0], zoom_start=7, tiles="CartoDB positron")
+        m_vuln = folium.Map(location=[53.8, 68.0], zoom_start=7, tiles="OpenStreetMap")
 
         for _, row in df_vuln.iterrows():
             color = row.get("map_color", "#888888")
@@ -1479,11 +1495,11 @@ with tab5:
                 colorbar=dict(title="V-Index"),
             ))
             fig_vuln.update_layout(
-                map_style="carto-darkmatter",
-                map=dict(center=dict(lat=53.9, lon=68.0), zoom=6),
+                map_style="open-street-map",
+                map=dict(center=dict(lat=53.8, lon=68.0), zoom=6),
                 height=500,
                 margin=dict(l=0, r=0, t=30, b=0),
-                title="Тепловая карта уязвимости хозяйств — СКО",
+                title="Тепловая карта уязвимости хозяйств — Северный зерновой пояс",
                 **{k: v for k, v in PLOTLY_THEME.items() if k == "paper_bgcolor"},
             )
         elif hasattr(go, "Densitymapbox"):
@@ -1498,11 +1514,11 @@ with tab5:
                 colorbar=dict(title="V-Index"),
             ))
             fig_vuln.update_layout(
-                mapbox_style="carto-darkmatter",
-                mapbox=dict(center=dict(lat=53.9, lon=68.0), zoom=6),
+                mapbox_style="open-street-map",
+                mapbox=dict(center=dict(lat=53.8, lon=68.0), zoom=6),
                 height=500,
                 margin=dict(l=0, r=0, t=30, b=0),
-                title="Тепловая карта уязвимости хозяйств — СКО",
+                title="Тепловая карта уязвимости хозяйств — Северный зерновой пояс",
                 **{k: v for k, v in PLOTLY_THEME.items() if k == "paper_bgcolor"},
             )
         else:
@@ -1551,7 +1567,7 @@ with tab6:
     st.markdown("## 🔙 Модуль исторического бэктестинга (Засуха 2021)")
     st.markdown(
         "Ретроспективный тест модели на исторических данных засушливого 2021 года (Костанайская и Акмолинская обл.). "
-        "Показывает, насколько раньше Daryn обнаруживает корневой вододефицит по сравнению с официальными новостями."
+        "Показывает, насколько раньше AgriCascade обнаруживает корневой вододефицит по сравнению с официальными новостями."
     )
     
     col_bt1, col_bt2 = st.columns([3, 1])
@@ -1583,7 +1599,7 @@ with tab6:
         )
         fig_bt.add_annotation(
             x="2021-06-18", y=-1.5,
-            text="Daryn: Сигнал тревоги<br>(18 июня)",
+            text="AgriCascade: Сигнал тревоги<br>(18 июня)",
             showarrow=True, arrowhead=1, ax=-40, ay=-40,
             font=dict(color="#40c4ff", size=12)
         )
@@ -1606,7 +1622,7 @@ with tab6:
         )
         
         fig_bt.update_layout(
-            title="Сравнение времени реакции: Daryn vs Официальные СМИ (2021 год)",
+            title="Сравнение времени реакции: AgriCascade vs Официальные СМИ (2021 год)",
             xaxis_title="Дата",
             yaxis_title="PSI (Отклонение от нормы)",
             height=400,
@@ -1616,11 +1632,11 @@ with tab6:
         
     with col_bt2:
         st.info("⏱️ **Раннее предупреждение**")
-        st.metric("Преимущество во времени", "27 дней", delta="Daryn быстрее")
+        st.metric("Преимущество во времени", "27 дней", delta="AgriCascade быстрее")
         st.markdown(
             "В 2021 году Минсельхоз официально признал сильную засуху только в середине июля, "
             "когда фермеры уже понесли необратимые потери.\n\n"
-            "Daryn зафиксировал падение индекса вегетации ниже критической отметки (PSI < -1.5) **18 июня**, "
+            "AgriCascade зафиксировала падение индекса вегетации ниже критической отметки (PSI < -1.5) **18 июня**, "
             "что дало бы фермерам и элеваторам почти месяц на подготовку, страхование или перестройку логистики."
         )
 
@@ -1730,8 +1746,8 @@ else:
 st.divider()
 st.markdown("""
 <div style="text-align: center; color: rgba(255,255,255,0.3); font-size: 0.8rem; padding: 12px">
-    🛰️ Daryn — Агро-Разведчик &nbsp;·&nbsp;
-    Данные: Google Earth Engine · NASA SMAP · FAOSTAT · OpenStreetMap · Sentinel-1 SAR &nbsp;·&nbsp;
+    🌾 AgriCascade — Система раннего предупреждения продовольственных рисков &nbsp;·&nbsp;
+    Данные: Google Earth Engine · NASA SMAP · FAOSTAT · OpenStreetMap · Sentinel-1/2 SAR &nbsp;·&nbsp;
     Метод: PhenoShift NDVI · Granger Causality · NetworkX Routing
 </div>
 """, unsafe_allow_html=True)

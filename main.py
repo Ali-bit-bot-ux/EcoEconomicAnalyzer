@@ -1,6 +1,6 @@
 """
-Daryn — main.py
-================
+AgriCascade — main.py
+====================
 Главная точка входа. Запускает все модули (1–5) по цепочке.
 
 Использование:
@@ -28,7 +28,7 @@ def setup_logging():
         level="INFO",
     )
     logger.add(
-        "logs/daryn_{time:YYYY-MM-DD}.log",
+        "logs/agricascode_{time:YYYY-MM-DD}.log",
         rotation="1 day",
         retention="7 days",
         level="DEBUG",
@@ -40,7 +40,7 @@ def print_banner():
     """Стартовый баннер проекта."""
     banner = """
 ================================================================
-  DARYN -- Agro-Intelligence
+  AGRICASCADE -- Agro-Intelligence
   Early Warning System for Agricultural & Food Security Risks
   Google Earth Engine + Remote Sensing + Econometric Modeling
 ================================================================

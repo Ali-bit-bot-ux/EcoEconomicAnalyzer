@@ -1,5 +1,5 @@
 """
-Daryn — Агро-Разведчик
+AgriCascade — Мониторинг продовольственных рисков
 Централизованная конфигурация проекта
 ======================================
 Все параметры системы в одном месте.
@@ -168,4 +168,4 @@ WORLDBANK_INDICATORS = {
 WORLDBANK_COUNTRY = "KAZ"
 
 import logging
-logging.getLogger(__name__).debug("Daryn configuration loaded successfully")
+logging.getLogger(__name__).debug("AgriCascade configuration loaded successfully")
