@@ -537,7 +537,7 @@
         <div class="grid-3">
           <div class="card">
             <div class="card-num" style="background: rgba(249, 115, 22, 0.2); color: var(--accent-orange);">01</div>
-            <h3 class="card-title">Оптикалық шектеулер</h3>
+            <h3 class="card-title">Оптика шектеуі</h3>
             <div class="card-sub" style="color: var(--accent-orange);">Бұлттылық және кеш тіркеу</div>
             <div class="card-divider"></div>
             <p class="card-desc">Дәстүрлі оптикалық спутниктер (Sentinel-2) бұлтты күндері жер бетін көре алмайды. Сонымен қатар, оптика өсімдіктің вегетациялық бұзылуын тек кеш кезеңде (жапырақтары сарғайып, зақымданғанда ғана) <strong>тіркейді</strong>.</p>
@@ -755,7 +755,7 @@
           </div>
           <div class="metric-card">
             <h3 style="color: var(--accent-emerald);">0%</h3>
-            <p>Деректердің жылыстауы (Data Leakage: 0%)</p>
+            <p>Data Leakage (Ақпарат ақпауы)</p>
           </div>
           <div class="metric-card">
             <h3 style="color: var(--accent-purple);">27 күн бұрын</h3>
@@ -784,7 +784,7 @@
 
           <div class="step-card" style="border-left-color: var(--accent-rose);">
             <div class="step-badge" style="background: var(--accent-rose);">Т + 10 КҮН</div>
-            <h4 style="font-size: 1.05rem; margin-bottom: 4px;">Ресми хабарлама & Бағаның күрт өсуі</h4>
+            <h4 style="font-size: 1.05rem; margin-bottom: 4px;">Ресми хабарлама & Баға шогы</h4>
             <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4;">Құрғақшылық ресми түрде жарияланып, биржада астық бағасының күрт өсуі орын алды.</p>
           </div>
         </div>
