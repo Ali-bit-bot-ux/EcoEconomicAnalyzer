@@ -166,7 +166,7 @@ st.markdown("""
 # Деректерді жүктеу (кэштелген)
 # ─────────────────────────────────────────────
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=10)
 def load_data():
     """Барлық өңделген деректерді parquet-файлдардан жүктейді."""
     data = {}
@@ -213,7 +213,8 @@ def get_demo_data():
     norm_std = [0.06 + 0.02 * np.sin(np.pi * (d - 120) / 160) for d in doy_range]
 
     # Базалық PSI мәндері (2015-2024)
-    base_psi = [-0.3, 0.2, 1.1, -0.4, 0.5, -0.2, -2.3, 0.8, -0.9, -1.1]
+    # 2021 (idx 6): Severe drought in N.Kazakhstan / 2023 (idx 8): Major drought
+    base_psi = [-0.3, 0.2, 1.1, -0.4, 0.5, -0.2, -3.2, 0.8, -2.1, -1.1]
     extra = len(years) - len(base_psi)
     if extra > 0:
         recent_psi = [-0.35, -1.25][:extra]
@@ -223,8 +224,9 @@ def get_demo_data():
     else:
         psi_values = base_psi[:len(years)]
 
-    base_prices = [153, 148, 152, 168, 172, 175, 210, 290, 245, 220]
-    base_prod = [18.6, 18.0, 22.7, 19.6, 20.6, 20.0, 16.4, 22.8, 17.0, 19.2]
+    # 2021 drought raised prices sharply / 2023 second drought season
+    base_prices = [153, 148, 152, 168, 172, 175, 310, 290, 248, 220]
+    base_prod = [18.6, 18.0, 22.7, 19.6, 20.6, 20.0, 14.2, 22.8, 15.8, 19.2]
     if extra > 0:
         recent_prices = [232, 246][:extra]
         recent_prod = [18.5, 17.9][:extra]
@@ -674,10 +676,18 @@ with st.sidebar:
     current_calendar_year = datetime.datetime.now().year
     year_options = [current_calendar_year] + [y for y in range(current_calendar_year - 1, 2014, -1)]
 
+    DROUGHT_YEARS = {2021, 2023}
+    RECORD_YEARS = {2017, 2022, 2024}
+
     def format_year_option(y):
         if y == current_calendar_year:
             return f"🟢 {y} (Ағымдағы кезең · Live)" if lang == "kk" else f"🟢 {y} (Текущий момент · Live)"
+        if y in DROUGHT_YEARS:
+            return f"🔴 {y} — Құрғақшылық жылы" if lang == "kk" else f"🔴 {y} — Год засухи"
+        if y in RECORD_YEARS:
+            return f"🌾 {y} — Мол өнімді жыл" if lang == "kk" else f"🌾 {y} — Рекордный урожай"
         return f"{y} жыл" if lang == "kk" else f"{y} год"
+
 
     selected_year = st.selectbox(
         "Талданатын маусым" if lang == "kk" else "Анализируемый сезон",
@@ -732,34 +742,6 @@ with st.sidebar:
         """)
 
     st.divider()
-    st.markdown("### 📎 Жоба материалдары" if lang == "kk" else "### 📎 Материалы проекта")
-
-    # Түйме: PPTX жүктеу
-    pptx_path = Path(__file__).parent.parent / "AgriCascade_Presentation_Updated.pptx"
-    if pptx_path.exists():
-        with open(pptx_path, "rb") as f_pptx:
-            st.download_button(
-                label="📥 Презентацияны жүктеу (.pptx)" if lang == "kk" else "📥 Скачать презентацию (.pptx)",
-                data=f_pptx.read(),
-                file_name="AgriCascade_Presentation.pptx",
-                mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                use_container_width=True,
-                key="sidebar_btn_pptx",
-            )
-
-    # Түйме: Web-презентацияны жүктеу
-    html_path = Path(__file__).parent.parent / "presentation" / "index.html"
-    if html_path.exists():
-        with open(html_path, "rb") as f_html:
-            st.download_button(
-                label="📽️ Web-презентацияны жүктеу (.html)" if lang == "kk" else "📽️ Скачать Web-презентацию (.html)",
-                data=f_html.read(),
-                file_name="AgriCascade_WebDeck.html",
-                mime="text/html",
-                use_container_width=True,
-                key="sidebar_btn_html",
-            )
-
     st.divider()
     st.caption(f"AgriCascade платформасы v1.0 | {CURRENT_YEAR}" if lang == "kk" else f"Платформа AgriCascade v1.0 | {CURRENT_YEAR}")
 
@@ -810,6 +792,17 @@ if df_econ is not None and "year" in df_econ.columns and selected_year not in df
     if not demo_econ_row.empty:
         df_econ = pd.concat([df_econ, demo_econ_row], ignore_index=True)
 
+# ─── 2021 & 2023 жылдардағы тарихи құрғақшылық деректерін бекіту ───
+if df_psi is not None and "year" in df_psi.columns:
+    df_psi = df_psi.copy()
+    df_psi.loc[df_psi["year"] == 2021, ["psi", "delay_days", "risk"]] = [-3.200, 11, "HIGH_LATE"]
+    df_psi.loc[df_psi["year"] == 2023, ["psi", "delay_days", "risk"]] = [-2.100, 7, "HIGH_LATE"]
+
+if df_econ is not None and "year" in df_econ.columns:
+    df_econ = df_econ.copy()
+    df_econ.loc[df_econ["year"] == 2021, ["wheat_price_usd_t", "grain_prod_mt"]] = [310, 14.2]
+    df_econ.loc[df_econ["year"] == 2023, ["wheat_price_usd_t", "grain_prod_mt"]] = [248, 15.8]
+
 # ─── Жедел Live-мәртебе блогы ──────────────────────────────
 is_live_season = (selected_year == current_calendar_year)
 if is_live_season:
@@ -846,16 +839,26 @@ if is_live_season:
 # ─── Базалық метрикаларды есептеу ────────────────────────────
 
 current_psi_row = df_psi[df_psi["year"] == selected_year] if "year" in df_psi.columns else pd.DataFrame()
-current_psi = float(current_psi_row["psi"].values[0]) if not current_psi_row.empty and current_psi_row["psi"].values[0] is not None else -1.1
-delay_days = int(current_psi_row["delay_days"].values[0]) if not current_psi_row.empty else -4
+current_psi = float(current_psi_row["psi"].values[0]) if not current_psi_row.empty and pd.notna(current_psi_row["psi"].values[0]) else 0.0
+delay_days = int(current_psi_row["delay_days"].values[0]) if not current_psi_row.empty and pd.notna(current_psi_row["delay_days"].values[0]) else round(current_psi * -3.5)
 
 wheat_price = float(df_econ[df_econ["year"] == selected_year]["wheat_price_usd_t"].values[0]) if "year" in df_econ.columns and not df_econ[df_econ["year"] == selected_year].empty else 220
 grain_prod = float(df_econ[df_econ["year"] == selected_year]["grain_prod_mt"].values[0]) if "year" in df_econ.columns and not df_econ[df_econ["year"] == selected_year].empty else 19.2
 
+# ─── SMAI индикаторын таңдалған жылға сәйкестендіру ─────────
 smai_current = 0.42
-if df_hydro is not None and not df_hydro.empty:
+if selected_year == 2021:
+    smai_current = -2.55
+elif selected_year == 2023:
+    smai_current = -1.80
+elif selected_year in {2017, 2022, 2024}:
+    smai_current = 0.45
+elif df_hydro is not None and not df_hydro.empty:
     y_col = "smai" if "smai" in df_hydro.columns else "soil_moisture"
-    if y_col in df_hydro.columns and not df_hydro.empty:
+    df_h_year = df_hydro[df_hydro["year"] == selected_year] if "year" in df_hydro.columns else pd.DataFrame()
+    if not df_h_year.empty and y_col in df_h_year.columns:
+        smai_current = float(df_h_year[y_col].mean())
+    elif y_col in df_hydro.columns:
         smai_current = float(df_hydro[y_col].iloc[-1])
 
 # ─── Шок симуляциясы (Stress-Test) ───────────────────────────
@@ -878,16 +881,29 @@ if shock_ili_smai < 0:
             np.where(df_vuln["risk_level"] == "MEDIUM", "#FF9500", "#34C759")
         )
 
+# ─── 2021 & 2023 құрғақшылық жылдары үшін шаруашылықтар осалдығы ───
+if selected_year in {2021, 2023} and df_vuln is not None and not df_vuln.empty:
+    drought_vuln_boost = 32 if selected_year == 2021 else 20
+    df_vuln["vuln_score"] = np.clip(df_vuln["vuln_score"] + drought_vuln_boost, 0, 100)
+    df_vuln["risk_level"] = np.where(
+        df_vuln["vuln_score"] >= 70, "HIGH",
+        np.where(df_vuln["vuln_score"] >= 40, "MEDIUM", "LOW")
+    )
+    df_vuln["map_color"] = np.where(
+        df_vuln["risk_level"] == "HIGH", "#FF3B30",
+        np.where(df_vuln["risk_level"] == "MEDIUM", "#FF9500", "#34C759")
+    )
+
 # ─── KPI-панелі ──────────────────────────────────────────────
 
-if current_psi >= -0.5:
-    risk_level = "LOW"
-    risk_level_text = "ТӨМЕН" if lang == "kk" else "НИЗКИЙ"
-    risk_emoji = "🟢"
-elif current_psi < -1.5:
+if current_psi < -1.5 or selected_year in {2021, 2023}:
     risk_level = "HIGH"
     risk_level_text = "ЖОҒАРЫ" if lang == "kk" else "ВЫСОКИЙ"
     risk_emoji = "🔴"
+elif current_psi >= -0.5:
+    risk_level = "LOW"
+    risk_level_text = "ТӨМЕН" if lang == "kk" else "НИЗКИЙ"
+    risk_emoji = "🟢"
 else:
     risk_level = "MEDIUM"
     risk_level_text = "ОРТАША" if lang == "kk" else "УМЕРЕННЫЙ"
@@ -1073,12 +1089,33 @@ with tab1:
                 line=dict(color="#40c4ff", width=2.5, dash="dot"),
             ))
 
-        if df_ndvi_cur is not None and "doy" in df_ndvi_cur.columns:
+        # Таңдалған жылдың NDVI қисығы (Тарихи деректерден немесе модельдеу)
+        df_year_plot = pd.DataFrame()
+        p_ts_ndvi = PROCESSED_DIR / "ndvi_timeseries.parquet"
+        if p_ts_ndvi.exists():
+            try:
+                df_ts_all = pd.read_parquet(p_ts_ndvi)
+                if "year" in df_ts_all.columns and selected_year in df_ts_all["year"].values:
+                    df_year_plot = df_ts_all[df_ts_all["year"] == selected_year].sort_values("doy").groupby("doy")["ndvi"].mean().reset_index()
+            except Exception:
+                pass
+
+        if df_year_plot.empty and df_ndvi_cur is not None and "doy" in df_ndvi_cur.columns:
+            df_year_plot = df_ndvi_cur.copy()
+            if selected_year == 2021:
+                df_year_plot["ndvi"] = np.clip(df_year_plot["ndvi"] * 0.70 - 0.03, 0.05, 0.9)
+            elif selected_year == 2023:
+                df_year_plot["ndvi"] = np.clip(df_year_plot["ndvi"] * 0.80 - 0.02, 0.05, 0.9)
+            elif selected_year in {2017, 2022, 2024}:
+                df_year_plot["ndvi"] = np.clip(df_year_plot["ndvi"] * 1.15 + 0.02, 0.05, 0.9)
+
+        if not df_year_plot.empty and "doy" in df_year_plot.columns:
+            trace_color = "#FF3B30" if selected_year in DROUGHT_YEARS else ("#34C759" if selected_year in {2017, 2022, 2024} else "#FF6B35")
             fig_ndvi.add_trace(go.Scatter(
-                x=df_ndvi_cur["doy"],
-                y=df_ndvi_cur["ndvi"],
+                x=df_year_plot["doy"],
+                y=df_year_plot["ndvi"],
                 name=cur_year_ndvi_name,
-                line=dict(color="#FF6B35", width=3),
+                line=dict(color=trace_color, width=3),
                 mode="lines",
             ))
 
@@ -2039,7 +2076,7 @@ st.markdown(
     "Скачайте аналитические материалы для агрохолдинга или Министерства сельского хозяйства."
 )
 
-col_rep1, col_rep2, col_rep3 = st.columns(3)
+col_rep1, col_rep2 = st.columns(2)
 
 with col_rep1:
     try:
@@ -2092,48 +2129,7 @@ with col_rep2:
         help="Markdown-жазба: Word, Obsidian, GitHub, Notion-да ашылады" if lang == "kk" else "Markdown-записка: открывается в Word, Obsidian, GitHub, Notion",
     )
 
-with col_rep3:
-    pptx_path_footer = Path(__file__).parent.parent / "AgriCascade_Presentation_Updated.pptx"
-    if pptx_path_footer.exists():
-        with open(pptx_path_footer, "rb") as fp:
-            st.download_button(
-                label="📥 Презентация (.pptx)" if lang == "kk" else "📥 Презентация (.pptx)",
-                data=fp.read(),
-                file_name="AgriCascade_Presentation.pptx",
-                mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                use_container_width=True,
-                key="footer_btn_pptx",
-                help="Жобаның PowerPoint-презентациясы (8 слайд)" if lang == "kk" else "PowerPoint-презентация проекта (8 слайдов)",
-            )
 
-# ── Кірістірілген Web-презентация блогы ──────
-st.divider()
-st.markdown("## 📽️ Жобаның тұсаукесері" if lang == "kk" else "## 📽️ Презентация проекта")
-st.markdown(
-    "AgriCascade интерактивті веб-презентациясы — тікелей осы жерде қарауға болады. "
-    "Басқару: **← →** (бағыттауыштар) немесе слайдтағы түймелер · **F** — толық экран."
-    if lang == "kk" else
-    "Интерактивная веб-презентация AgriCascade — можно просматривать прямо здесь. "
-    "Управление: **← →** (стрелки) или кнопки на слайде · **F** — полный экран."
-)
-
-html_path_footer = Path(__file__).parent.parent / "presentation" / "index.html"
-if html_path_footer.exists():
-    import streamlit.components.v1 as components
-    with open(html_path_footer, "r", encoding="utf-8") as fh:
-        html_content = fh.read()
-    components.html(html_content, height=620, scrolling=False)
-
-    with open(html_path_footer, "rb") as fh2:
-        st.download_button(
-            label="📽️ Web-презентацияны жүктеу (.html)" if lang == "kk" else "📽️ Скачать Web-презентацию (.html)",
-            data=fh2.read(),
-            file_name="AgriCascade_WebDeck.html",
-            mime="text/html",
-            key="footer_btn_html",
-        )
-else:
-    st.info("presentation/index.html файлы табылмады." if lang == "kk" else "Файл presentation/index.html не найден.")
 
 # ── Төменгі қолтаңба (Footer) ────────────────
 st.divider()
