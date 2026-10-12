@@ -1029,9 +1029,10 @@ tab3_lbl = "🏗️ SiloGrid"
 tab4_lbl = "📈 Contagion"
 tab5_lbl = "🚨 Vulnerability"
 tab6_lbl = "🔙 Backtesting 2021"
+tab7_lbl = "🌾 AgroAdvisor"
 
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-    tab1_lbl, tab2_lbl, tab3_lbl, tab4_lbl, tab5_lbl, tab6_lbl
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+    tab1_lbl, tab2_lbl, tab3_lbl, tab4_lbl, tab5_lbl, tab6_lbl, tab7_lbl
 ])
 
 
@@ -2129,6 +2130,24 @@ with col_rep2:
         help="Markdown-жазба: Word, Obsidian, GitHub, Notion-да ашылады" if lang == "kk" else "Markdown-записка: открывается в Word, Obsidian, GitHub, Notion",
     )
 
+
+
+# ══════════════════════════════════════════════
+# TAB 7: AgroAdvisor (Quareo Drought Knowledge Base)
+# ══════════════════════════════════════════════
+
+with tab7:
+    try:
+        from dashboard.agroadvisor_tab import render_agroadvisor_tab
+    except ImportError:
+        try:
+            from agroadvisor_tab import render_agroadvisor_tab
+        except ImportError as e:
+            st.error(f"Қате: AgroAdvisor модулі табылмады: {e}" if lang == "kk" else f"Ошибка: Модуль AgroAdvisor не найден: {e}")
+            render_agroadvisor_tab = None
+
+    if render_agroadvisor_tab:
+        render_agroadvisor_tab(lang=lang)
 
 
 # ── Төменгі қолтаңба (Footer) ────────────────

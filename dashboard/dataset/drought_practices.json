@@ -1,0 +1,287 @@
+[
+  {
+    "id": "no_till_stubble",
+    "name_ru": "Нулевая обработка (No-Till) с сохранением высокой стерни",
+    "category": "agrotechnological",
+    "action_horizon": "long_term_strategic",
+    "cost_level": "medium",
+    "estimated_water_saving_percent": "35 - 50% снижения непродуктивного испарения",
+    "implementation_protocol": "Прямой посев анкерными или дисковыми сеялками в необработанную почву. Оставление стерни высотой 20-30 см при уборке очесывающими жатками. Равномерное распределение измельченной соломы (мульчирующий ковер 3-5 т/га).",
+    "soil_applicability": [
+      "chernozem_southern_ordinary",
+      "chestnut_dark_light"
+    ],
+    "gale_reference_ids": ["REF-GALE-002", "REF-ICARDA-001"],
+    "practical_limitations": "Не рекомендуется на тяжелых бесструктурных солонцах без предварительной мелиорации, а также на переувлажненных холодных почвах весной."
+  },
+  {
+    "id": "deep_subsoiling_chiseling",
+    "name_ru": "Глубокое безотвальное рыхление (чизелевание / щелевание)",
+    "category": "agrotechnological",
+    "action_horizon": "long_term_strategic",
+    "cost_level": "medium",
+    "estimated_water_saving_percent": "40 - 60% увеличение инфильтрации осенне-зимних осадков",
+    "implementation_protocol": "Проводится осенью по зяби чизельными плугами или глубокорыхлителями на глубину 35-45 см с шагом стоек 50-70 см. Разрушает плужную подошву без выворачивания малоплодородного горизонта.",
+    "soil_applicability": [
+      "chernozem_southern_ordinary",
+      "chestnut_dark_light",
+      "sierozem_calcareous"
+    ],
+    "gale_reference_ids": ["REF-GALE-005"],
+    "practical_limitations": "Неэффективно на сыпучих песчаных почвах. Не проводить при переувлажненной почве во избежание пластической деформации и замазывания щелей."
+  },
+  {
+    "id": "snow_retention_kulisy",
+    "name_ru": "Снегозадержание кулисами и снегопахами-риджерами",
+    "category": "agrotechnological",
+    "action_horizon": "seasonal_tactical",
+    "cost_level": "low",
+    "estimated_water_saving_percent": "+50 - 100 мм продуктивной влаги к моменту сева",
+    "implementation_protocol": "Посев кулис в июне-июле (горчица сарептская, подсолнечник, суданская трава) через каждые 12-15 метров перпендикулярно господствующим зимним ветрам. Зимой — нарезка снежных валов снегопахами СВУ-2.6 при толщине снега >12 см.",
+    "soil_applicability": [
+      "chernozem_southern_ordinary",
+      "chestnut_dark_light",
+      "brown_semi_desert"
+    ],
+    "gale_reference_ids": ["REF-KAZNIIZIR-001", "REF-GALE-002"],
+    "practical_limitations": "Зависит от наличия твердых зимних осадков. В бесснежные зимы не дает эффекта."
+  },
+  {
+    "id": "superabsorbent_hydrogels",
+    "name_ru": "Внесение полимерных суперабсорбентов (SAP гидрогелей)",
+    "category": "chemical",
+    "action_horizon": "seasonal_tactical",
+    "cost_level": "medium",
+    "estimated_water_saving_percent": "+30 - 45% емкости удержания влаги в зоне корней",
+    "implementation_protocol": "Локальное внесение калиевых полиакрилатных гидрогелей в дозе 15-25 кг/га одновременно с посевом в семенное ложе (на глубину 5-8 см). При поливе/дожде гранулы впитывают объем воды в 300-400 раз больше своего веса и отдают корням по мере иссушения почвы.",
+    "soil_applicability": [
+      "sandy_arenosol",
+      "chestnut_dark_light",
+      "sierozem_calcareous"
+    ],
+    "gale_reference_ids": ["REF-GALE-001"],
+    "practical_limitations": "Не использовать натриевые гидрогели (технические), разрушающие структуру почвы. На высокоминерализованных водах сорбционная емкость снижается на 40%."
+  },
+  {
+    "id": "mycorrhizal_inoculation",
+    "name_ru": "Биологическая инокуляция эндомикоризой и ризобактериями",
+    "category": "biological",
+    "action_horizon": "seasonal_tactical",
+    "cost_level": "low",
+    "estimated_water_saving_percent": "+25 - 35% расширения зоны всасывания корневой системы",
+    "implementation_protocol": "Обработка семян перед посевом спорами арбускулярно-микоризных грибов (Glomus intraradices / mosseae) совместно с ризобактериями Bacillus subtilis / Pseudomonas putida. Мицелий микоризы проникает в микропоры почвы, недоступные корневым волоскам.",
+    "soil_applicability": [
+      "chernozem_southern_ordinary",
+      "chestnut_dark_light",
+      "sierozem_calcareous",
+      "alluvial_meadow"
+    ],
+    "gale_reference_ids": ["REF-GALE-003", "REF-ICARDA-001"],
+    "practical_limitations": "Чувствительность к высоким дозам химических фунгицидных протравителей системного действия. Требует совместимых биопрепаратов."
+  },
+  {
+    "id": "subsurface_drip_irrigation",
+    "name_ru": "Подпочвенное капельное орошение (SDI)",
+    "category": "hydromeliorative",
+    "action_horizon": "long_term_strategic",
+    "cost_level": "high",
+    "estimated_water_saving_percent": "40 - 55% экономии воды по сравнению с поверхностным орошением",
+    "implementation_protocol": "Укладка капельных трубок на глубину 25-35 см с компенсированными капельницами. Подача воды непосредственно в корнеобитаемый слой исключает испарение с поверхности и блокирует капиллярный подъем солей.",
+    "soil_applicability": [
+      "sierozem_calcareous",
+      "alluvial_meadow",
+      "chestnut_dark_light",
+      "sandy_arenosol"
+    ],
+    "gale_reference_ids": ["REF-GALE-004", "REF-FAO-056"],
+    "practical_limitations": "Высокие первоначальные капзатраты ($1500-2500/га). Требует качественной фильтрации воды против заиливания капельниц."
+  },
+  {
+    "id": "surface_drip_fertigation",
+    "name_ru": "Капельное орошение с импульсной подачей и фертигацией",
+    "category": "hydromeliorative",
+    "action_horizon": "seasonal_tactical",
+    "cost_level": "medium",
+    "estimated_water_saving_percent": "30 - 45% экономии поливной воды, повышение усвоения удобрений на 35%",
+    "implementation_protocol": "Монтаж капельных линий по поверхности рядков с подачей воды и растворимых минеральных удобрений (NPK + микроэлементы) малыми порциями строго по фазам вегетации. Исключает непроизводительные потери воды на инфильтрацию в глубокие горизонты.",
+    "soil_applicability": [
+      "sierozem_calcareous",
+      "alluvial_meadow",
+      "chestnut_dark_light",
+      "sandy_arenosol"
+    ],
+    "gale_reference_ids": ["REF-GALE-004", "REF-FAO-056"],
+    "practical_limitations": "Линии на поверхности подвержены механическим повреждениям при культивации и ультрафиолетовой деградации."
+  },
+  {
+    "id": "antitranspirant_spraying",
+    "name_ru": "Обработка антитранспирантами при наступлении суховеев",
+    "category": "chemical",
+    "action_horizon": "emergency_0_48h",
+    "cost_level": "low",
+    "estimated_water_saving_percent": "Снижение потерь транспирации на 25-40% на 7-14 дней",
+    "implementation_protocol": "Экстренное мелкодисперсное опрыскивание вегетирующих посевов биополимерными пленкообразующими составами (на основе пинолена, хвойных терпенов или хитозана) за 24-48 часов до наступления волны экстремальной жары (>33°C). Покрывает листовую пластину полупроницаемой микропленкой.",
+    "soil_applicability": [
+      "chernozem_southern_ordinary",
+      "chestnut_dark_light",
+      "sierozem_calcareous",
+      "brown_semi_desert",
+      "sandy_arenosol",
+      "alluvial_meadow",
+      "solonchak_solonetz"
+    ],
+    "gale_reference_ids": ["REF-GALE-003"],
+    "practical_limitations": "Применять строго ранним утром или в вечерние часы. Завышение концентрации может снизить фотосинтез."
+  },
+  {
+    "id": "foliar_osmoprotectants",
+    "name_ru": "Листовая подкормка калием, глицин-бетаином и аминокислотами",
+    "category": "chemical",
+    "action_horizon": "emergency_0_48h",
+    "cost_level": "low",
+    "estimated_water_saving_percent": "Предотвращение увядания и осыпания генеративных органов при температуре до +38°C",
+    "implementation_protocol": "Баковая смесь: монокалийфосфат (KH2PO4) 2-3 кг/га или сульфат калия (K2SO4) + свободные L-аминокислоты (пролин, глутаминовая кислота) 0.5-1.0 л/га + хелат кремния (Si). Калий регулирует тургор замыкающих клеток устьиц, пролин препятствует денатурации белков.",
+    "soil_applicability": [
+      "chernozem_southern_ordinary",
+      "chestnut_dark_light",
+      "sierozem_calcareous",
+      "brown_semi_desert",
+      "sandy_arenosol",
+      "alluvial_meadow",
+      "solonchak_solonetz"
+    ],
+    "gale_reference_ids": ["REF-GALE-003"],
+    "practical_limitations": "Не смешивать с медьсодержащими и агрессивными щелочными пестицидами во время теплового стресса."
+  },
+  {
+    "id": "interrow_shallow_harrowing",
+    "name_ru": "«Сухой полив» (мелкое междурядное рыхление на 3-5 см)",
+    "category": "agrotechnological",
+    "action_horizon": "emergency_0_48h",
+    "cost_level": "low",
+    "estimated_water_saving_percent": "Прекращение потерь влаги через почвенные капилляры на 70%",
+    "implementation_protocol": "Проведение мелкого рыхления ротационными боронами (штригелями) или междурядными культиваторами на глубину 3-5 см сразу после дождя или полива при подсыхании верхнего слоя. Разрушает капиллярную сеть и почвенную корку, создавая изолирующий мульчирующий слой из сухих почвенных агрегатов.",
+    "soil_applicability": [
+      "chestnut_dark_light",
+      "sierozem_calcareous",
+      "chernozem_southern_ordinary",
+      "solonchak_solonetz"
+    ],
+    "gale_reference_ids": ["REF-KAZNIIZIR-001"],
+    "practical_limitations": "Категорически запрещено на чистых сухих песках (вызывает мгновенную дефляцию) и глубже 5 см (приведет к выворачиванию влажного слоя на открытый воздух)."
+  },
+  {
+    "id": "organic_mulching",
+    "name_ru": "Мульчирование междурядий органическими материалами",
+    "category": "agrotechnological",
+    "action_horizon": "seasonal_tactical",
+    "cost_level": "medium",
+    "estimated_water_saving_percent": "40 - 60% снижения эвапорации, снижение температуры почвы на 4-8°C",
+    "implementation_protocol": "Укладка соломенной резки, рисовой шелухи или измельченных остатков слоем 5-8 см в прикорневые полосы и междурядья пропашных и овощных культур. Предотвращает перегрев корневой зоны выше критических +28°C.",
+    "soil_applicability": [
+      "sierozem_calcareous",
+      "alluvial_meadow",
+      "chestnut_dark_light",
+      "sandy_arenosol"
+    ],
+    "gale_reference_ids": ["REF-GALE-002", "REF-ICARDA-001"],
+    "practical_limitations": "Требует наличия доступного объема соломы/органики (4-6 т/га). При высоком давлении мышевидных грызунов требует контроля."
+  },
+  {
+    "id": "biodegradable_plastic_mulch",
+    "name_ru": "Мульчирование светоотражающей биоразлагаемой пленкой",
+    "category": "agrotechnological",
+    "action_horizon": "seasonal_tactical",
+    "cost_level": "medium",
+    "estimated_water_saving_percent": "50 - 65% сокращения поливных норм на пропашных культурах",
+    "implementation_protocol": "Раскладка серебристо-черной или белой биоразлагаемой полимолочной пленки грядообразователями с одновременной укладкой капельной ленты. Посев или высадка рассады в перфорированные отверстия. Препятствует испарению и росту сорняков-водопотребителей.",
+    "soil_applicability": [
+      "sierozem_calcareous",
+      "alluvial_meadow",
+      "sandy_arenosol"
+    ],
+    "gale_reference_ids": ["REF-GALE-004"],
+    "practical_limitations": "Экономически рентабельно в основном на высокомаржинальных овощных, бахчевых и хлопковых культурах."
+  },
+  {
+    "id": "shelterbelts_agroforestry",
+    "name_ru": "Полезащитные лесополосы и ветроломные кустарниковые кулисы",
+    "category": "agroforestry",
+    "action_horizon": "long_term_strategic",
+    "cost_level": "high",
+    "estimated_water_saving_percent": "Снижение скорости суховея на 40%, снижение транспирации поля на 20-25%",
+    "implementation_protocol": "Посадка продуваемых 3-4 рядных лесных полос из засухоустойчивых пород (вяз мелколистный, ясень ланцетный, лох узколистный, карагана) по границам полей с шагом 400-500 метров. Создает влажный микроклимат и аккумулирует сугробы.",
+    "soil_applicability": [
+      "chernozem_southern_ordinary",
+      "chestnut_dark_light",
+      "sierozem_calcareous",
+      "alluvial_meadow"
+    ],
+    "gale_reference_ids": ["REF-GALE-002", "REF-KAZNIIZIR-001"],
+    "practical_limitations": "Требует 5-8 лет для достижения защитной высоты. Полосы требуют ухода и полива в первые 2-3 года."
+  },
+  {
+    "id": "gypsum_amendment_solonetz",
+    "name_ru": "Химическая мелиорация (гипсование) солонцовых почв",
+    "category": "chemical",
+    "action_horizon": "long_term_strategic",
+    "cost_level": "high",
+    "estimated_water_saving_percent": "Увеличение водопроницаемости в 3-6 раз, снятие токсичности солей",
+    "implementation_protocol": "Внесение фосфогипса или тонкоразмолотого гипса (CaSO4·2H2O) в дозе 4-8 т/га с последующей глубокой заделкой и промывным поливом. Ионы кальция вытесняют поглощенный натрий (Na+), коагулируя почвенные коллоиды и открывая поры для воды.",
+    "soil_applicability": [
+      "solonchak_solonetz"
+    ],
+    "gale_reference_ids": ["REF-ICARDA-001", "REF-FAO-056"],
+    "practical_limitations": "Требует дренажной системы для отвода вымытого сульфата и хлорида натрия во избежание вторичного засоления."
+  },
+  {
+    "id": "deficit_irrigation_scheduling",
+    "name_ru": "Управляемый дефицитный полив (Regulated Deficit Irrigation, RDI)",
+    "category": "hydromeliorative",
+    "action_horizon": "seasonal_tactical",
+    "cost_level": "low",
+    "estimated_water_saving_percent": "25 - 35% экономии оросительной воды без существенной потери урожая",
+    "implementation_protocol": "Ограничение подачи воды (до 50-60% от полной потребности) в некритические фазы вегетации (ранний вегетативный рост) для стимуляции глубокого укоренения, и подача 100% нормы строго в критические фазы (бутонизация, цветение, налив).",
+    "soil_applicability": [
+      "sierozem_calcareous",
+      "alluvial_meadow",
+      "chestnut_dark_light"
+    ],
+    "gale_reference_ids": ["REF-FAO-056", "REF-GALE-004"],
+    "practical_limitations": "Требует точного мониторинга влажности почвы тензиометрами или датчиками TDR/FDR."
+  },
+  {
+    "id": "clay_amendment_sand",
+    "name_ru": "Глинование и создание противофильтрационных бентонитовых экранов",
+    "category": "agrotechnological",
+    "action_horizon": "long_term_strategic",
+    "cost_level": "high",
+    "estimated_water_saving_percent": "Увеличение влагоемкости песчаных почв на 100-150%",
+    "implementation_protocol": "Внесение бентонитовой глины (или местной суглинистой породы) в норме 15-30 т/га с перемешиванием фрезой на глубину 20-25 см. Создает адсорбционную матрицу, предотвращающую моментальный сброс гравитационной воды в песок.",
+    "soil_applicability": [
+      "sandy_arenosol"
+    ],
+    "gale_reference_ids": ["REF-GALE-001"],
+    "practical_limitations": "Высокая стоимость логистики карьерной глины при больших площадях полей."
+  },
+  {
+    "id": "humic_acid_root_stimulation",
+    "name_ru": "Внесение солей гуминовых и фульвовых кислот в прикорневую зону",
+    "category": "biological",
+    "action_horizon": "seasonal_tactical",
+    "cost_level": "low",
+    "estimated_water_saving_percent": "+20% устойчивости к осмотическому давлению",
+    "implementation_protocol": "Внесение гуматов калия / натрия с поливной водой или при протравливании семян (50-100 г/га по д.в.). Активизирует рост боковых тонких корешков и стимулирует выработку эндогенного абсцизовой кислоты (ABA), сигнализирующей устьицам о закрытии.",
+    "soil_applicability": [
+      "chernozem_southern_ordinary",
+      "chestnut_dark_light",
+      "sierozem_calcareous",
+      "brown_semi_desert",
+      "sandy_arenosol",
+      "alluvial_meadow",
+      "solonchak_solonetz"
+    ],
+    "gale_reference_ids": ["REF-GALE-003", "REF-KAZNIIZIR-001"],
+    "practical_limitations": "Эффективность снижается на почвах с очень высоким содержанием естественного гумуса (>6%)."
+  }
+]

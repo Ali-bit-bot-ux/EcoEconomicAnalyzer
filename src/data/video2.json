@@ -1,0 +1,24 @@
+{
+  "title": "Создаём спавн монет в Roblox за 5 строк! 🪙",
+  "subtitle": "Программирование для детей",
+  "badge": "ROBLOX GAMEDEV • 7–13 ЛЕТ",
+  "language": "lua",
+  "filename": "coin_spawner.lua",
+  "codeSnippet": "-- Создаем сбор монет в Roblox! 🚀\nlocal Coin = script.Parent\n\nlocal function onTouch(hit)\n    local player = game.Players:GetPlayerFromCharacter(hit.Parent)\n    if player then\n        player.leaderstats.Coins.Value += 10\n        Coin:Destroy()\n        print(\"🪙 Монета собрана: +10!\")\n    end\nend\n\nCoin.Touched:Connect(onTouch)",
+  "terminalOutput": [
+    "⚡ Инициализация скрипта Roblox Studio",
+    "🎮 Игрок коснулся объекта: Coin",
+    "🪙 Монета собрана: +10 к балансу!",
+    "🏆 Достижение разблокировано: Искатель сокровищ!"
+  ],
+  "ctaText": "Пройди квиз по ссылке в профиле @codestudykz",
+  "ctaSubtext": "Бесплатный пробный урок + тест IT-навыков",
+  "trustChips": [
+    "📹 Google Meet",
+    "👥 До 4 учеников",
+    "💻 80% практики",
+    "📊 Отчёты родителям"
+  ],
+  "showSubtitles": true,
+  "srt": "1\n00:00:00,500 --> 00:00:02,800\nСоздаём спавн монет в Roblox Studio за 5 строк! 🪙\n\n2\n00:00:03,000 --> 00:00:06,600\nПишем функцию onTouch и прибавляем баланс игрока 🚀\n\n3\n00:00:06,900 --> 00:00:10,200\nМонета собрана! Начислено +10 к балансу 🏆\n\n4\n00:00:10,500 --> 00:00:14,800\nПройди квиз по ссылке в профиле @codestudykz! 🎯\n"
+}

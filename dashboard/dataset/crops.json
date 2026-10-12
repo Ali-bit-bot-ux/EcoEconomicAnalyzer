@@ -1,0 +1,425 @@
+[
+  {
+    "id": "spring_wheat",
+    "name_ru": "Пшеница яровая (мягкая и твердая)",
+    "latin_name": "Triticum aestivum / durum",
+    "crop_type": "зерновые",
+    "drought_tolerance_score": 3,
+    "drought_mechanism": "Экономное расходование влаги, закрытие устьиц при жаре, синтез пролина",
+    "root_depth_meters": "1.2 - 1.6",
+    "root_type": "мочковатая",
+    "transpiration_coefficient": "400 - 500 л/кг СВ",
+    "critical_water_phases": [
+      "кущение (закладка колосковых бугорков)",
+      "выход в трубку (формирование числа зерен в колосе)",
+      "колошение - цветение",
+      "налив зерна (молочная спелость)"
+    ],
+    "wilting_threshold_swc_percent": 35,
+    "optimal_soil_types": [
+      "chernozem_southern_ordinary",
+      "chestnut_dark_light"
+    ],
+    "risk_soil_types": [
+      "sandy_arenosol",
+      "solonchak_solonetz"
+    ],
+    "fao_kc_coefficient": 1.15,
+    "drought_symptoms": "Скручивание верхних листьев в трубочку («стрелкование»), посинение листьев, усыхание нижних ярусов, череззерница и щуплость зерна"
+  },
+  {
+    "id": "winter_wheat",
+    "name_ru": "Пшеница озимая",
+    "latin_name": "Triticum aestivum",
+    "crop_type": "зерновые",
+    "drought_tolerance_score": 3.5,
+    "drought_mechanism": "Уход от раннелетней засухи за счет быстрого весеннего старта на зимне-весенней влаге",
+    "root_depth_meters": "1.5 - 2.0",
+    "root_type": "мочковатая",
+    "transpiration_coefficient": "380 - 450 л/кг СВ",
+    "critical_water_phases": [
+      "осеннее кущение (до ухода в зиму)",
+      "ранневесеннее возобновление вегетации",
+      "колошение и цветение"
+    ],
+    "wilting_threshold_swc_percent": 30,
+    "optimal_soil_types": [
+      "chernozem_southern_ordinary",
+      "chestnut_dark_light",
+      "sierozem_calcareous"
+    ],
+    "risk_soil_types": [
+      "sandy_arenosol",
+      "solonchak_solonetz"
+    ],
+    "fao_kc_coefficient": 1.15,
+    "drought_symptoms": "Преждевременное пожелтение флагового листа, стекание зерна, короткий колос"
+  },
+  {
+    "id": "spring_barley",
+    "name_ru": "Ячмень яровой",
+    "latin_name": "Hordeum vulgare",
+    "crop_type": "зерновые",
+    "drought_tolerance_score": 4,
+    "drought_mechanism": "Короткий вегетационный период, раннее завершение налива зерна до наступления пика суховеев",
+    "root_depth_meters": "1.0 - 1.3",
+    "root_type": "мочковатая",
+    "transpiration_coefficient": "350 - 420 л/кг СВ",
+    "critical_water_phases": [
+      "выход в трубку",
+      "колошение"
+    ],
+    "wilting_threshold_swc_percent": 30,
+    "optimal_soil_types": [
+      "chestnut_dark_light",
+      "chernozem_southern_ordinary",
+      "sierozem_calcareous"
+    ],
+    "risk_soil_types": [
+      "solonchak_solonetz",
+      "sandy_arenosol"
+    ],
+    "fao_kc_coefficient": 1.10,
+    "drought_symptoms": "Опадение остей, пустоколосица, снижение массы 1000 семян"
+  },
+  {
+    "id": "oats",
+    "name_ru": "Овес посевной",
+    "latin_name": "Avena sativa",
+    "crop_type": "зерновые",
+    "drought_tolerance_score": 2.5,
+    "drought_mechanism": "Сравнительно влаголюбивая культура среди колосовых, высокая транспирация",
+    "root_depth_meters": "1.0 - 1.4",
+    "root_type": "мочковатая",
+    "transpiration_coefficient": "450 - 550 л/кг СВ",
+    "critical_water_phases": [
+      "за 10-14 дней до выметывания метелки",
+      "цветение"
+    ],
+    "wilting_threshold_swc_percent": 40,
+    "optimal_soil_types": [
+      "chernozem_southern_ordinary"
+    ],
+    "risk_soil_types": [
+      "chestnut_dark_light",
+      "solonchak_solonetz",
+      "sandy_arenosol"
+    ],
+    "fao_kc_coefficient": 1.15,
+    "drought_symptoms": "Белоколосица (захват овса), отмирание верхних веточек метелки, резкое снижение завязываемости"
+  },
+  {
+    "id": "maize_corn",
+    "name_ru": "Кукуруза на зерно и силос",
+    "latin_name": "Zea mays",
+    "crop_type": "зерновые",
+    "drought_tolerance_score": 3,
+    "drought_mechanism": "C4-тип фотосинтеза (высокая эффективность использования воды на единицу биомассы), но высокая листовая площадь",
+    "root_depth_meters": "1.8 - 2.5",
+    "root_type": "мочковатая, ярусная с воздушными корнями",
+    "transpiration_coefficient": "250 - 350 л/кг СВ",
+    "critical_water_phases": [
+      "за 10 дней до выметывания метелки",
+      "цветение и оплодотворение початков (выход рылец)",
+      "молочно-восковая спелость"
+    ],
+    "wilting_threshold_swc_percent": 45,
+    "optimal_soil_types": [
+      "chernozem_southern_ordinary",
+      "sierozem_calcareous",
+      "alluvial_meadow"
+    ],
+    "risk_soil_types": [
+      "solonchak_solonetz",
+      "sandy_arenosol",
+      "brown_semi_desert"
+    ],
+    "fao_kc_coefficient": 1.20,
+    "drought_symptoms": "«Скручивание листьев в сигары», задержка выхода шелковистых нитей рылец (асинхронность с пыльцой), череззерница початка"
+  },
+  {
+    "id": "millet",
+    "name_ru": "Просо обыкновенное",
+    "latin_name": "Panicum miliaceum",
+    "crop_type": "зерновые",
+    "drought_tolerance_score": 4.8,
+    "drought_mechanism": "C4-фотосинтез, способность впадать в анабиозный покой во время жары и возобновлять рост после осадков",
+    "root_depth_meters": "1.0 - 1.3",
+    "root_type": "мочковатая",
+    "transpiration_coefficient": "200 - 280 л/кг СВ",
+    "critical_water_phases": [
+      "выметывание метелки - цветение"
+    ],
+    "wilting_threshold_swc_percent": 25,
+    "optimal_soil_types": [
+      "chestnut_dark_light",
+      "chernozem_southern_ordinary",
+      "brown_semi_desert"
+    ],
+    "risk_soil_types": [
+      "solonchak_solonetz"
+    ],
+    "fao_kc_coefficient": 1.00,
+    "drought_symptoms": "Ограничение кущения, засыхание верхушек листьев (легко переносит кратковременную засуху)"
+  },
+  {
+    "id": "sorghum",
+    "name_ru": "Сорго зерновое и сахарное",
+    "latin_name": "Sorghum bicolor",
+    "crop_type": "зерновые",
+    "drought_tolerance_score": 5,
+    "drought_mechanism": "«Растение-верблюд»: толстый восковой налет на листьях, мощная корневая система с гидротропизмом, C4-фотосинтез",
+    "root_depth_meters": "2.0 - 2.8",
+    "root_type": "мочковатая глубокая",
+    "transpiration_coefficient": "180 - 250 л/кг СВ",
+    "critical_water_phases": [
+      "выметывание метелки"
+    ],
+    "wilting_threshold_swc_percent": 20,
+    "optimal_soil_types": [
+      "chestnut_dark_light",
+      "sierozem_calcareous",
+      "brown_semi_desert",
+      "sandy_arenosol"
+    ],
+    "risk_soil_types": [],
+    "fao_kc_coefficient": 1.00,
+    "drought_symptoms": "Сворачивание листовых пластин вдоль центральной жилки, остановка удлинения междоузлий"
+  },
+  {
+    "id": "sunflower",
+    "name_ru": "Подсолнечник масличный",
+    "latin_name": "Helianthus annuus",
+    "crop_type": "масличные",
+    "drought_tolerance_score": 3.8,
+    "drought_mechanism": "Стержневой глубокий корень, выкачивающий влагу из горизонта 2-3 метров",
+    "root_depth_meters": "2.0 - 3.2",
+    "root_type": "стержневая глубокая",
+    "transpiration_coefficient": "450 - 600 л/кг СВ",
+    "critical_water_phases": [
+      "закладка корзинки (фаза «звездочки»)",
+      "цветение",
+      "налив семян"
+    ],
+    "wilting_threshold_swc_percent": 35,
+    "optimal_soil_types": [
+      "chernozem_southern_ordinary",
+      "chestnut_dark_light"
+    ],
+    "risk_soil_types": [
+      "solonchak_solonetz",
+      "sandy_arenosol"
+    ],
+    "fao_kc_coefficient": 1.15,
+    "drought_symptoms": "Поникание корзинок, увядание нижних 4-6 пар листьев, пустозерность в центре корзинки"
+  },
+  {
+    "id": "safflower",
+    "name_ru": "Сафлор красильный",
+    "latin_name": "Carthamus tinctorius",
+    "crop_type": "масличные",
+    "drought_tolerance_score": 4.9,
+    "drought_mechanism": "Ксерофитная анатомия: колючие плотные кожистые листья, мощный стержневой корень, солеустойчивость",
+    "root_depth_meters": "2.2 - 3.0",
+    "root_type": "стержневая глубокая",
+    "transpiration_coefficient": "300 - 380 л/кг СВ",
+    "critical_water_phases": [
+      "бутонизация и начало цветения"
+    ],
+    "wilting_threshold_swc_percent": 22,
+    "optimal_soil_types": [
+      "chestnut_dark_light",
+      "sierozem_calcareous",
+      "brown_semi_desert"
+    ],
+    "risk_soil_types": [],
+    "fao_kc_coefficient": 1.05,
+    "drought_symptoms": "Усыхание единичных боковых веточек, раннее созревание"
+  },
+  {
+    "id": "spring_rapeseed",
+    "name_ru": "Рапс яровой",
+    "latin_name": "Brassica napus",
+    "crop_type": "масличные",
+    "drought_tolerance_score": 2.5,
+    "drought_mechanism": "Поверхностная масса мелких корней, высокая чувствительность к почвенной и воздушной засухе",
+    "root_depth_meters": "1.2 - 1.5",
+    "root_type": "стержневая разветвленная",
+    "transpiration_coefficient": "500 - 700 л/кг СВ",
+    "critical_water_phases": [
+      "бутонизация",
+      "цветение",
+      "формирование стручков"
+    ],
+    "wilting_threshold_swc_percent": 45,
+    "optimal_soil_types": [
+      "chernozem_southern_ordinary"
+    ],
+    "risk_soil_types": [
+      "chestnut_dark_light",
+      "solonchak_solonetz",
+      "sandy_arenosol",
+      "brown_semi_desert"
+    ],
+    "fao_kc_coefficient": 1.20,
+    "drought_symptoms": "Абортирование цветков и бутонов, растрескивание стручков, преждевременный сброс листьев"
+  },
+  {
+    "id": "flax_linseed",
+    "name_ru": "Лён масличный (кудряш)",
+    "latin_name": "Linum usitatissimum",
+    "crop_type": "масличные",
+    "drought_tolerance_score": 3.8,
+    "drought_mechanism": "Небольшая листовая поверхность, мелкие семена с быстрым наливом, способность извлекать влагу из плотных слоев",
+    "root_depth_meters": "1.0 - 1.4",
+    "root_type": "стержневая тонкая",
+    "transpiration_coefficient": "380 - 440 л/кг СВ",
+    "critical_water_phases": [
+      "«елочка» (быстрый рост стебля)",
+      "бутонизация и цветение"
+    ],
+    "wilting_threshold_swc_percent": 30,
+    "optimal_soil_types": [
+      "chestnut_dark_light",
+      "chernozem_southern_ordinary"
+    ],
+    "risk_soil_types": [
+      "solonchak_solonetz",
+      "sandy_arenosol"
+    ],
+    "fao_kc_coefficient": 1.00,
+    "drought_symptoms": "Низкорослость стебля, сниженное ветвление, уменьшение числа коробочек на растении"
+  },
+  {
+    "id": "chickpea",
+    "name_ru": "Нут (турецкий горох)",
+    "latin_name": "Cicer arietinum",
+    "crop_type": "зернобобовые",
+    "drought_tolerance_score": 4.5,
+    "drought_mechanism": "Железистые волоски, выделяющие органические кислоты (яблочную/щавелевую) для удержания росы, глубокий стержневой корень",
+    "root_depth_meters": "1.4 - 1.8",
+    "root_type": "стержневая с клубеньками",
+    "transpiration_coefficient": "300 - 380 л/кг СВ",
+    "critical_water_phases": [
+      "цветение и образование бобов"
+    ],
+    "wilting_threshold_swc_percent": 25,
+    "optimal_soil_types": [
+      "chestnut_dark_light",
+      "chernozem_southern_ordinary",
+      "sierozem_calcareous"
+    ],
+    "risk_soil_types": [
+      "solonchak_solonetz"
+    ],
+    "fao_kc_coefficient": 1.00,
+    "drought_symptoms": "Пожелтение нижних бобов, сброс верхних неопыленных цветков"
+  },
+  {
+    "id": "lentil",
+    "name_ru": "Чечевица (тарелочная и мелкосемянная)",
+    "latin_name": "Lens culinaris",
+    "crop_type": "зернобобовые",
+    "drought_tolerance_score": 3.7,
+    "drought_mechanism": "Короткий вегетационный период, мелколистность, высокая устойчивость к суховеям в первой половине лета",
+    "root_depth_meters": "0.8 - 1.1",
+    "root_type": "стержневая разветвленная",
+    "transpiration_coefficient": "350 - 430 л/кг СВ",
+    "critical_water_phases": [
+      "бутонизация и цветение"
+    ],
+    "wilting_threshold_swc_percent": 30,
+    "optimal_soil_types": [
+      "chestnut_dark_light",
+      "chernozem_southern_ordinary"
+    ],
+    "risk_soil_types": [
+      "solonchak_solonetz",
+      "sandy_arenosol"
+    ],
+    "fao_kc_coefficient": 1.00,
+    "drought_symptoms": "Полегание тонких стеблей, раннее отмирание точки роста, мелкосемянность"
+  },
+  {
+    "id": "pea",
+    "name_ru": "Горох полевой",
+    "latin_name": "Pisum sativum",
+    "crop_type": "зернобобовые",
+    "drought_tolerance_score": 2.8,
+    "drought_mechanism": "Низкая термостойкость пыльцы, при температуре >+28°C цветки осыпаются",
+    "root_depth_meters": "1.0 - 1.3",
+    "root_type": "стержневая",
+    "transpiration_coefficient": "400 - 500 л/кг СВ",
+    "critical_water_phases": [
+      "бутонизация",
+      "цветение",
+      "налив бобов"
+    ],
+    "wilting_threshold_swc_percent": 40,
+    "optimal_soil_types": [
+      "chernozem_southern_ordinary"
+    ],
+    "risk_soil_types": [
+      "chestnut_dark_light",
+      "solonchak_solonetz",
+      "sandy_arenosol",
+      "brown_semi_desert"
+    ],
+    "fao_kc_coefficient": 1.15,
+    "drought_symptoms": "Массовое опадение бутонов («пустоцвет»), усыхание прилистников, задержка роста усов"
+  },
+  {
+    "id": "alfalfa",
+    "name_ru": "Люцерна синяя / кормовая",
+    "latin_name": "Medicago sativa",
+    "crop_type": "кормовые",
+    "drought_tolerance_score": 4.5,
+    "drought_mechanism": "Мощнейший стержневой корень, проникающий до 4-6 метров и достающий влагу грунтовых вод",
+    "root_depth_meters": "3.5 - 6.0",
+    "root_type": "стержневая глубинная",
+    "transpiration_coefficient": "600 - 850 л/кг СВ (высокий суммарный расход, но непревзойденная живучесть)",
+    "critical_water_phases": [
+      "отрастание после каждого укоса",
+      "стеблевание"
+    ],
+    "wilting_threshold_swc_percent": 25,
+    "optimal_soil_types": [
+      "sierozem_calcareous",
+      "alluvial_meadow",
+      "chernozem_southern_ordinary",
+      "chestnut_dark_light"
+    ],
+    "risk_soil_types": [
+      "sandy_arenosol"
+    ],
+    "fao_kc_coefficient": 1.15,
+    "drought_symptoms": "Остановка отрастания отавы после укоса, скручивание тройчатых листьев, ранее одревеснение стеблей"
+  },
+  {
+    "id": "cotton",
+    "name_ru": "Хлопчатник (средневолокнистый)",
+    "latin_name": "Gossypium hirsutum",
+    "crop_type": "технические",
+    "drought_tolerance_score": 3.8,
+    "drought_mechanism": "Термофильная культура, глубокий корень, способность сбрасывать лишние коробочки для выживания",
+    "root_depth_meters": "1.8 - 2.5",
+    "root_type": "стержневая глубокая",
+    "transpiration_coefficient": "400 - 550 л/кг СВ",
+    "critical_water_phases": [
+      "массовое цветение",
+      "плодообразование (рост коробочек)"
+    ],
+    "wilting_threshold_swc_percent": 35,
+    "optimal_soil_types": [
+      "sierozem_calcareous",
+      "alluvial_meadow"
+    ],
+    "risk_soil_types": [
+      "solonchak_solonetz",
+      "sandy_arenosol",
+      "brown_semi_desert"
+    ],
+    "fao_kc_coefficient": 1.20,
+    "drought_symptoms": "Сброс бутонов и завязей («кутикулярный аборт»), покраснение верхней части стебля, увядание верхушечной почки"
+  }
+]
