@@ -73,35 +73,33 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* Негізгі тақырып */
+    /* Негізгі тақырып — жылы, «дала» стилі (cream / wheat / field green) */
     .stApp {
-        background: linear-gradient(135deg, #0a0f1e 0%, #0d1b2a 50%, #0a1628 100%);
-        font-family: 'Inter', sans-serif;
+        background: linear-gradient(160deg, #f8f4ea 0%, #f4efe2 55%, #eef0e3 100%);
+        font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+        color: #33302a;
     }
 
     /* Тақырып блогы */
     .agri-header {
-        background: linear-gradient(135deg, #1a2a4a 0%, #0f1f3d 100%);
-        border: 1px solid rgba(64, 196, 255, 0.2);
+        background: linear-gradient(135deg, #fffdf8 0%, #f5efdd 100%);
+        border: 1px solid rgba(139, 115, 85, 0.28);
         border-radius: 16px;
         padding: 24px 32px;
         margin-bottom: 24px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        box-shadow: 0 6px 20px rgba(90, 75, 50, 0.08);
     }
 
     .agri-title {
-        font-size: 2.4rem;
+        font-size: 2.3rem;
         font-weight: 800;
-        background: linear-gradient(135deg, #40c4ff, #7c4dff, #40c4ff);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+        color: #2f4a33;
         margin: 0;
-        letter-spacing: -1px;
+        letter-spacing: -0.5px;
     }
 
     .agri-subtitle {
-        color: rgba(255,255,255,0.75);
+        color: #6d6656;
         font-size: 0.95rem;
         margin-top: 6px;
         line-height: 1.5;
@@ -109,31 +107,31 @@ st.markdown("""
 
     /* Метрика-карталар */
     .metric-card {
-        background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(255,255,255,0.08);
+        background: #fffdf8;
+        border: 1px solid rgba(139, 115, 85, 0.2);
         border-radius: 12px;
         padding: 20px;
         text-align: center;
-        backdrop-filter: blur(10px);
+        box-shadow: 0 3px 10px rgba(90, 75, 50, 0.06);
     }
 
     .metric-value {
         font-size: 2rem;
         font-weight: 700;
-        color: #40c4ff;
+        color: #a06a1d;
     }
 
     .metric-label {
-        color: rgba(255,255,255,0.5);
+        color: #8a8271;
         font-size: 0.8rem;
         text-transform: uppercase;
         letter-spacing: 1px;
     }
 
     /* Тәуекел бейдждері */
-    .risk-high   { color: #FF3B30; font-weight: 700; }
-    .risk-medium { color: #FF9500; font-weight: 700; }
-    .risk-low    { color: #34C759; font-weight: 700; }
+    .risk-high   { color: #d64533; font-weight: 700; }
+    .risk-medium { color: #c97f22; font-weight: 700; }
+    .risk-low    { color: #3e8948; font-weight: 700; }
 
     /* Қойынды (Tab) стильдері */
     .stTabs [data-baseweb="tab"] {
@@ -144,17 +142,24 @@ st.markdown("""
 
     /* Sidebar */
     [data-testid="stSidebar"] {
-        background: rgba(13, 27, 42, 0.95);
-        border-right: 1px solid rgba(64, 196, 255, 0.1);
+        background: #efe8d8;
+        border-right: 1px solid rgba(139, 115, 85, 0.25);
     }
+
+    /* Streamlit метрикалары — табиғи түстер */
+    [data-testid="stMetricValue"] { color: #2f4a33; }
+    [data-testid="stMetricLabel"] { color: #6d6656; }
 
     /* Прогресс-барлар */
     .progress-bar-container {
-        background: rgba(255,255,255,0.05);
+        background: rgba(90, 75, 50, 0.12);
         border-radius: 4px;
         height: 8px;
         overflow: hidden;
     }
+
+    /* Жұмсақ бөлгіштер */
+    hr { border-color: rgba(139, 115, 85, 0.25); }
 
     /* Контейнер кеңістігі */
     .block-container { padding-top: 1rem; }
@@ -330,31 +335,31 @@ def render_ai_summary(psi_val, smai_val, high_risk_count, moderate_risk_count, l
 
 
 PLOTLY_THEME = dict(
-    paper_bgcolor="rgba(0,0,0,0)",
-    plot_bgcolor="rgba(255,255,255,0.03)",
-    font=dict(color="rgba(255,255,255,0.8)", family="Inter"),
+    paper_bgcolor="rgba(255,255,255,0)",
+    plot_bgcolor="rgba(255,253,248,0.6)",
+    font=dict(color="#4a463c", family="Segoe UI"),
     xaxis=dict(
-        gridcolor="rgba(255,255,255,0.07)",
-        linecolor="rgba(255,255,255,0.1)",
+        gridcolor="rgba(51,48,42,0.08)",
+        linecolor="rgba(51,48,42,0.2)",
     ),
     yaxis=dict(
-        gridcolor="rgba(255,255,255,0.07)",
-        linecolor="rgba(255,255,255,0.1)",
+        gridcolor="rgba(51,48,42,0.08)",
+        linecolor="rgba(51,48,42,0.2)",
     ),
 )
 
 
 def psi_color(psi_val: float) -> str:
     if psi_val is None:
-        return "#888888"
+        return "#9a9384"
     if psi_val < PSI_THRESHOLD_LOW:
-        return "#FF3B30"
+        return "#d64533"
     elif psi_val > PSI_THRESHOLD_HIGH:
-        return "#FF9500"
+        return "#e2932f"
     elif psi_val < -1.0:
-        return "#FF6B35"
+        return "#d96c3b"
     else:
-        return "#34C759"
+        return "#3e8948"
 
 
 # ─────────────────────────────────────────────
@@ -820,16 +825,16 @@ if is_live_season:
     season_badge = f"● АҒЫМДАҒЫ МАУСЫМ {selected_year}" if lang == "kk" else f"● ТЕКУЩИЙ СЕЗОН {selected_year}"
 
     st.markdown(f"""
-    <div style="background: linear-gradient(90deg, rgba(52,199,89,0.15) 0%, rgba(13,27,42,0.6) 100%); border-left: 4px solid #34C759; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px;">
+    <div style="background: linear-gradient(90deg, rgba(62,137,72,0.14) 0%, rgba(247,243,234,0.92) 100%); border-left: 4px solid #3e8948; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px;">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
             <div>
-                <span style="color: #34C759; font-weight: bold; font-size: 1rem; letter-spacing: 0.5px;">{live_title}</span>
-                <span style="color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-left: 12px;">{live_today_lbl}</span>
-                <div style="color: rgba(255,255,255,0.85); font-size: 0.88rem; margin-top: 5px;">
+                <span style="color: #35793f; font-weight: bold; font-size: 1rem; letter-spacing: 0.5px;">{live_title}</span>
+                <span style="color: rgba(51,48,42,0.55); font-size: 0.85rem; margin-left: 12px;">{live_today_lbl}</span>
+                <div style="color: rgba(51,48,42,0.85); font-size: 0.88rem; margin-top: 5px;">
                     {live_desc}
                 </div>
             </div>
-            <div style="background: rgba(52,199,89,0.2); border: 1px solid rgba(52,199,89,0.4); padding: 4px 12px; border-radius: 20px; color: #34C759; font-weight: bold; font-size: 0.82rem;">
+            <div style="background: rgba(62,137,72,0.15); border: 1px solid rgba(62,137,72,0.45); padding: 4px 12px; border-radius: 20px; color: #35793f; font-weight: bold; font-size: 0.82rem;">
                 {season_badge}
             </div>
         </div>
@@ -877,8 +882,8 @@ if shock_ili_smai < 0:
             np.where(df_vuln["vuln_score"] >= 40, "MEDIUM", "LOW")
         )
         df_vuln["map_color"] = np.where(
-            df_vuln["risk_level"] == "HIGH", "#FF3B30",
-            np.where(df_vuln["risk_level"] == "MEDIUM", "#FF9500", "#34C759")
+            df_vuln["risk_level"] == "HIGH", "#d64533",
+            np.where(df_vuln["risk_level"] == "MEDIUM", "#e2932f", "#3e8948")
         )
 
 # ─── 2021 & 2023 құрғақшылық жылдары үшін шаруашылықтар осалдығы ───
@@ -890,8 +895,8 @@ if selected_year in {2021, 2023} and df_vuln is not None and not df_vuln.empty:
         np.where(df_vuln["vuln_score"] >= 40, "MEDIUM", "LOW")
     )
     df_vuln["map_color"] = np.where(
-        df_vuln["risk_level"] == "HIGH", "#FF3B30",
-        np.where(df_vuln["risk_level"] == "MEDIUM", "#FF9500", "#34C759")
+        df_vuln["risk_level"] == "HIGH", "#d64533",
+        np.where(df_vuln["risk_level"] == "MEDIUM", "#e2932f", "#3e8948")
     )
 
 # ─── KPI-панелі ──────────────────────────────────────────────
@@ -1072,7 +1077,7 @@ with tab1:
                 y=df_norm["ndvi_upper"],
                 name="",
                 fill=None,
-                line=dict(color="rgba(64,196,255,0)", width=0),
+                line=dict(color="rgba(0,0,0,0)", width=0),
                 showlegend=False,
             ))
             fig_ndvi.add_trace(go.Scatter(
@@ -1080,14 +1085,14 @@ with tab1:
                 y=df_norm["ndvi_lower"],
                 name=norm_corridor_name,
                 fill="tonexty",
-                fillcolor="rgba(64,196,255,0.12)",
-                line=dict(color="rgba(64,196,255,0)", width=0),
+                fillcolor="rgba(107,142,82,0.18)",
+                line=dict(color="rgba(0,0,0,0)", width=0),
             ))
             fig_ndvi.add_trace(go.Scatter(
                 x=df_norm["doy"],
                 y=df_norm["ndvi_mean"],
                 name=norm_mean_name,
-                line=dict(color="#40c4ff", width=2.5, dash="dot"),
+                line=dict(color="#8a7350", width=2.5, dash="dot"),
             ))
 
         # Таңдалған жылдың NDVI қисығы (Тарихи деректерден немесе модельдеу)
@@ -1111,7 +1116,7 @@ with tab1:
                 df_year_plot["ndvi"] = np.clip(df_year_plot["ndvi"] * 1.15 + 0.02, 0.05, 0.9)
 
         if not df_year_plot.empty and "doy" in df_year_plot.columns:
-            trace_color = "#FF3B30" if selected_year in DROUGHT_YEARS else ("#34C759" if selected_year in {2017, 2022, 2024} else "#FF6B35")
+            trace_color = "#d64533" if selected_year in DROUGHT_YEARS else ("#3e8948" if selected_year in {2017, 2022, 2024} else "#d96c3b")
             fig_ndvi.add_trace(go.Scatter(
                 x=df_year_plot["doy"],
                 y=df_year_plot["ndvi"],
@@ -1123,9 +1128,9 @@ with tab1:
         now_doy = datetime.datetime.now().timetuple().tm_yday
         fig_ndvi.add_vline(
             x=now_doy, line_dash="dash",
-            line_color="#34C759",
+            line_color="#3e8948",
             annotation_text=today_annotation,
-            annotation_font_color="#34C759",
+            annotation_font_color="#3e8948",
         )
 
         chart_title = (
@@ -1142,8 +1147,8 @@ with tab1:
             height=380,
             **PLOTLY_THEME,
             legend=dict(
-                bgcolor="rgba(0,0,0,0.3)",
-                bordercolor="rgba(255,255,255,0.1)",
+                bgcolor="rgba(255,255,255,0.9)",
+                bordercolor="rgba(51,48,42,0.12)",
                 borderwidth=1,
             ),
         )
@@ -1172,9 +1177,9 @@ with tab1:
         bar_title = f"Жылдар бойынша PhenoShift Index (таңдалған: {selected_year})" if lang == "kk" else f"PhenoShift Index по годам (выбран: {selected_year})"
         xaxis_year = "Жыл" if lang == "kk" else "Год"
 
-        fig_psi_bar.add_hline(y=PSI_THRESHOLD_HIGH, line_dash="dash", line_color="#FF9500", annotation_text=high_text)
-        fig_psi_bar.add_hline(y=PSI_THRESHOLD_LOW, line_dash="dash", line_color="#FF3B30", annotation_text=low_text)
-        fig_psi_bar.add_hline(y=0, line_color="rgba(255,255,255,0.2)")
+        fig_psi_bar.add_hline(y=PSI_THRESHOLD_HIGH, line_dash="dash", line_color="#e2932f", annotation_text=high_text)
+        fig_psi_bar.add_hline(y=PSI_THRESHOLD_LOW, line_dash="dash", line_color="#d64533", annotation_text=low_text)
+        fig_psi_bar.add_hline(y=0, line_color="rgba(51,48,42,0.2)")
 
         fig_psi_bar.update_layout(
             title=bar_title,
@@ -1217,7 +1222,7 @@ with tab1:
         poly_popup = "Солтүстік Қазақстан облысы" if lang == "kk" else "Северо-Казахстанская область"
         folium.Polygon(
             locations=[[lat, lon] for lon, lat in SKO_POLYGON],
-            color="#40c4ff",
+            color="#6b8e52",
             weight=2,
             fill=False,
             popup=poly_popup,
@@ -1278,7 +1283,7 @@ with tab2:
             "ishim": "Бассейн р. Ишим / Есиль (СКО / Петропавловск / Акмолинская)",
             "nura": "Бассейн р. Нура (Акмолинская обл. / Центрально-Северный)",
         }
-    basin_colors = {"tobol": "#40c4ff", "ishim": "#7c4dff", "nura": "#34C759"}
+    basin_colors = {"tobol": "#2e8b7a", "ishim": "#8a6d3b", "nura": "#5b8c3e"}
 
     fig_hydro = make_subplots(
         rows=3, cols=1,
@@ -1312,7 +1317,7 @@ with tab2:
 
         x_col = "date" if "date" in df_b.columns else df_b.index
         y_col = "smai" if "smai" in df_b.columns else "soil_moisture"
-        color = basin_colors.get(basin, "#40c4ff")
+        color = basin_colors.get(basin, "#2e8b7a")
 
         fig_hydro.add_trace(go.Scatter(
             x=df_b[x_col],
@@ -1324,8 +1329,8 @@ with tab2:
             showlegend=(i == 1),
         ), row=i, col=1)
 
-        fig_hydro.add_hline(y=-1, line_dash="dash", line_color="#FF3B30", line_width=1, row=i, col=1)
-        fig_hydro.add_hline(y=0, line_color="rgba(255,255,255,0.15)", line_width=1, row=i, col=1)
+        fig_hydro.add_hline(y=-1, line_dash="dash", line_color="#d64533", line_width=1, row=i, col=1)
+        fig_hydro.add_hline(y=0, line_color="rgba(51,48,42,0.18)", line_width=1, row=i, col=1)
 
     hydro_title = (
         "SMAP топырақ ылғалдылығының аномалиясы индексі (SMAI) — Солтүстік астық белдеуі алаптары"
@@ -1432,7 +1437,7 @@ with tab3:
                     fill_int = int(round(fill_val))
                     fill_str = f"{fill_int}%"
 
-                color = "#34C759" if fill_val > 70 else "#FF9500" if fill_val > 30 else "#FF3B30"
+                color = "#3e8948" if fill_val > 70 else "#e2932f" if fill_val > 30 else "#d64533"
 
                 capacity = row.get("capacity_t", None)
                 if pd.isna(capacity) or capacity is None:
@@ -1461,7 +1466,7 @@ with tab3:
                 folium.map.Marker(
                     [row["lat"] + 0.12, row["lon"]],
                     icon=folium.DivIcon(
-                        html=f'''<div style="color: {color}; font-size: 11px; font-weight: 700; white-space: nowrap; background: rgba(10, 15, 30, 0.88); padding: 2px 6px; border-radius: 4px; border: 1px solid {color}; display: inline-block; box-shadow: 0 2px 6px rgba(0,0,0,0.6);">{fill_str}</div>''',
+                        html=f'''<div style="color: {color}; font-size: 11px; font-weight: 700; white-space: nowrap; background: rgba(255, 252, 244, 0.92); padding: 2px 6px; border-radius: 4px; border: 1px solid {color}; display: inline-block; box-shadow: 0 2px 6px rgba(90,75,50,0.25);">{fill_str}</div>''',
                         icon_size=(50, 20),
                         icon_anchor=(25, 10),
                     ),
@@ -1488,7 +1493,7 @@ with tab3:
                     )
                     folium.PolyLine(
                         locations=coords,
-                        color="#40c4ff",
+                        color="#b5651d",
                         weight=3,
                         dash_array="5, 10",
                         opacity=0.8,
@@ -1607,11 +1612,11 @@ with tab4:
             sankey_title = "Путь риска: Вода → Поле → Элеватор → Рынок"
 
         sankey_colors = [
-            "#40c4ff", "#7c4dff", "#34C759",
-            "#FF9500", "#FF9500", "#FF9500",
-            "#888", "#888", "#888",
-            "#FFD700", "#FFA500", "#FF6347",
-            "#34C759", "#40c4ff",
+            "#2e8b7a", "#8a6d3b", "#5b8c3e",
+            "#e2932f", "#e2932f", "#e2932f",
+            "#a8a094", "#a8a094", "#a8a094",
+            "#e0b64f", "#cf8f4e", "#b5651d",
+            "#3e8948", "#c9862d",
         ]
 
         source = [0, 1, 2,  0, 3, 4, 5,  6, 7, 8,  9,  9, 10, 11]
@@ -1622,7 +1627,7 @@ with tab4:
             node=dict(
                 pad=15,
                 thickness=20,
-                line=dict(color="rgba(255,255,255,0.2)", width=0.5),
+                line=dict(color="rgba(51,48,42,0.25)", width=0.5),
                 label=sankey_nodes,
                 color=sankey_colors,
             ),
@@ -1630,7 +1635,7 @@ with tab4:
                 source=source,
                 target=target,
                 value=value,
-                color="rgba(64,196,255,0.15)",
+                color="rgba(201,134,45,0.18)",
             ),
         ))
 
@@ -1820,7 +1825,7 @@ with tab5:
         m_vuln = folium.Map(location=[53.8, 68.0], zoom_start=7, tiles="OpenStreetMap")
 
         for _, row in df_vuln.iterrows():
-            color = row.get("map_color", "#888888")
+            color = row.get("map_color", "#9a9384")
             v_score = row.get("vuln_score", 50)
 
             if lang == "kk":
@@ -1867,7 +1872,7 @@ with tab5:
                 lon=lons,
                 z=v_scores,
                 radius=30,
-                colorscale=[[0, "rgba(52,199,89,0.8)"], [0.4, "rgba(255,149,0,0.8)"], [1, "rgba(255,59,48,0.95)"]],
+                colorscale=[[0, "rgba(62,137,72,0.8)"], [0.4, "rgba(226,147,47,0.85)"], [1, "rgba(214,69,51,0.95)"]],
                 zmin=0,
                 zmax=100,
                 colorbar=dict(title="V-Index"),
@@ -1886,7 +1891,7 @@ with tab5:
                 lon=lons,
                 z=v_scores,
                 radius=30,
-                colorscale=[[0, "rgba(52,199,89,0.8)"], [0.4, "rgba(255,149,0,0.8)"], [1, "rgba(255,59,48,0.95)"]],
+                colorscale=[[0, "rgba(62,137,72,0.8)"], [0.4, "rgba(226,147,47,0.85)"], [1, "rgba(214,69,51,0.95)"]],
                 zmin=0,
                 zmax=100,
                 colorbar=dict(title="V-Index"),
@@ -1905,7 +1910,7 @@ with tab5:
                 x=lons, y=lats, color=v_scores,
                 labels=labels_map,
                 title=heat_title,
-                color_continuous_scale=[[0, "rgba(52,199,89,0.8)"], [0.4, "rgba(255,149,0,0.8)"], [1, "rgba(255,59,48,0.95)"]],
+                color_continuous_scale=[[0, "rgba(62,137,72,0.8)"], [0.4, "rgba(226,147,47,0.85)"], [1, "rgba(214,69,51,0.95)"]],
                 height=500,
             )
             fig_vuln.update_layout(**PLOTLY_THEME)
@@ -1990,39 +1995,39 @@ with tab6:
             y=psi_2021,
             mode='lines+markers',
             name='PhenoShift Index (2021)',
-            line=dict(color='#FF3B30', width=3),
-            marker=dict(size=8, color='#FF3B30'),
+            line=dict(color='#d64533', width=3),
+            marker=dict(size=8, color='#d64533'),
         ))
         
         crit_threshold_lbl = "Критикалық шек" if lang == "kk" else "Критический порог"
-        fig_bt.add_hline(y=-1.5, line_dash="dash", line_color="#FF9500", annotation_text=crit_threshold_lbl)
-        fig_bt.add_hline(y=0, line_color="rgba(255,255,255,0.2)")
+        fig_bt.add_hline(y=-1.5, line_dash="dash", line_color="#e2932f", annotation_text=crit_threshold_lbl)
+        fig_bt.add_hline(y=0, line_color="rgba(51,48,42,0.2)")
         
         fig_bt.add_vline(
-            x="2021-06-18", line_width=2, line_dash="dash", line_color="#40c4ff",
+            x="2021-06-18", line_width=2, line_dash="dash", line_color="#c9862d",
         )
         alarm_text = "AgriCascade: Дабыл сигналы<br>(18 маусым)" if lang == "kk" else "AgriCascade: Сигнал тревоги<br>(18 июня)"
         fig_bt.add_annotation(
             x="2021-06-18", y=-1.5,
             text=alarm_text,
             showarrow=True, arrowhead=1, ax=-40, ay=-40,
-            font=dict(color="#40c4ff", size=12)
+            font=dict(color="#a06a1d", size=12)
         )
         
         fig_bt.add_vline(
-            x="2021-07-15", line_width=2, line_color="rgba(255,255,255,0.7)",
+            x="2021-07-15", line_width=2, line_color="rgba(51,48,42,0.65)",
         )
         media_text = "Ресми: Құрғақшылық жарияланды<br>(15 шілде)" if lang == "kk" else "Официально: Засуха<br>(15 июля)"
         fig_bt.add_annotation(
             x="2021-07-15", y=-3.0,
             text=media_text,
             showarrow=True, arrowhead=1, ax=40, ay=40,
-            font=dict(color="white", size=12)
+            font=dict(color="#33302a", size=12)
         )
         
         fig_bt.add_vrect(
             x0="2021-06-18", x1="2021-07-15",
-            fillcolor="rgba(64,196,255,0.1)", layer="below", line_width=0,
+            fillcolor="rgba(201,134,45,0.1)", layer="below", line_width=0,
         )
         
         bt_title = (
@@ -2163,7 +2168,7 @@ footer_note = (
 )
 
 st.markdown(f"""
-<div style="text-align: center; color: rgba(255,255,255,0.4); font-size: 0.82rem; padding: 12px">
+<div style="text-align: center; color: rgba(51,48,42,0.6); font-size: 0.82rem; padding: 12px">
     {footer_note}
 </div>
 """, unsafe_allow_html=True)
