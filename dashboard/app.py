@@ -54,7 +54,24 @@ from config.settings import (
     KNOWN_ELEVATORS,
     SKO_CENTER,
     SKO_POLYGON,
+    GRAIN_BELT_REGIONS,
+    TARGET_CROPS,
 )
+from modules.gis_engine import compute_district_choropleth_geojson
+from modules.elevator_logistics import (
+    calculate_dynamic_silo_loads,
+    GrainLogisticsRouter,
+    calculate_price_transmission_chain,
+    BASE_WHEAT_PRICE_KZT_T,
+    BASE_FLOUR_PRICE_KZT_KG,
+    BASE_BREAD_PRICE_KZT_LOAF,
+)
+from modules.executive_audit import generate_executive_audit_markdown
+
+@st.cache_resource
+def _build_router() -> GrainLogisticsRouter:
+    """Кэшированная инициализация логистического роутера (строится один раз)."""
+    return GrainLogisticsRouter()
 
 # ─────────────────────────────────────────────
 # Streamlit конфигурациясы
@@ -68,84 +85,285 @@ st.set_page_config(
 )
 
 # ─────────────────────────────────────────────
-# CSS: Кастомды қараңғы дизайн
+# CSS: Тактикалық дизайн жүйесі (Tactical Design System)
 # ─────────────────────────────────────────────
+
+TACTICAL_MAP_TILES = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+TACTICAL_MAP_ATTR = 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
 
 st.markdown("""
 <style>
-    /* Негізгі тақырып */
-    .stApp {
-        background: linear-gradient(135deg, #0a0f1e 0%, #0d1b2a 50%, #0a1628 100%);
-        font-family: 'Inter', sans-serif;
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+    /* Leaflet Attribution Bar Cleanup */
+    .leaflet-control-attribution {
+        background: rgba(10, 15, 29, 0.8) !important;
+        color: #64748B !important;
+        font-size: 9px !important;
+        backdrop-filter: blur(4px);
+    }
+    .leaflet-control-attribution a {
+        color: #94A3B8 !important;
+        text-decoration: none !important;
     }
 
-    /* Тақырып блогы */
+    /* Негізгі тақырып — Deep Obsidian Градиент */
+    .stApp {
+        background: radial-gradient(circle at 50% 0%, #0d1b30 0%, #070B12 60%, #05080E 100%) !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        color: #E2E8F0 !important;
+    }
+
+    /* Контейнер кеңістігі */
+    .block-container {
+        padding-top: 1.2rem !important;
+        padding-bottom: 2rem !important;
+        max-width: 1440px !important;
+    }
+
+    /* Тақырып блогы (Tactical Glass Command Center) */
     .agri-header {
-        background: linear-gradient(135deg, #1a2a4a 0%, #0f1f3d 100%);
-        border: 1px solid rgba(64, 196, 255, 0.2);
+        background: linear-gradient(180deg, rgba(16, 26, 48, 0.85) 0%, rgba(9, 14, 28, 0.95) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-top: 1px solid rgba(0, 229, 255, 0.5);
         border-radius: 16px;
         padding: 24px 32px;
         margin-bottom: 24px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    .agri-header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
     }
 
     .agri-title {
-        font-size: 2.4rem;
+        font-size: 2.2rem;
         font-weight: 800;
-        background: linear-gradient(135deg, #40c4ff, #7c4dff, #40c4ff);
+        letter-spacing: -0.03em;
+        background: linear-gradient(135deg, #FFFFFF 30%, #00E5FF 75%, #7C4DFF 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
         margin: 0;
-        letter-spacing: -1px;
+        line-height: 1.2;
     }
 
     .agri-subtitle {
-        color: rgba(255,255,255,0.75);
-        font-size: 0.95rem;
+        color: #94A3B8;
+        font-size: 0.92rem;
+        font-weight: 400;
         margin-top: 6px;
         line-height: 1.5;
+        letter-spacing: -0.01em;
     }
 
-    /* Метрика-карталар */
-    .metric-card {
-        background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 12px;
-        padding: 20px;
-        text-align: center;
-        backdrop-filter: blur(10px);
-    }
-
-    .metric-value {
-        font-size: 2rem;
+    .header-status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(0, 229, 255, 0.08);
+        border: 1px solid rgba(0, 229, 255, 0.25);
+        border-radius: 20px;
+        padding: 4px 12px;
+        font-size: 0.72rem;
         font-weight: 700;
-        color: #40c4ff;
-    }
-
-    .metric-label {
-        color: rgba(255,255,255,0.5);
-        font-size: 0.8rem;
+        color: #00E5FF;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        font-family: 'JetBrains Mono', monospace;
     }
 
-    /* Тәуекел бейдждері */
-    .risk-high   { color: #FF3B30; font-weight: 700; }
-    .risk-medium { color: #FF9500; font-weight: 700; }
-    .risk-low    { color: #34C759; font-weight: 700; }
+    @keyframes live-pulse {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 229, 255, 0.7); }
+        70% { transform: scale(1.15); box-shadow: 0 0 0 7px rgba(0, 229, 255, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 229, 255, 0); }
+    }
 
-    /* Қойынды (Tab) стильдері */
+    .live-pulse-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #00E5FF;
+        box-shadow: 0 0 8px #00E5FF;
+        animation: live-pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+    }
+
+    .header-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        font-size: 0.72rem;
+        color: #64748B;
+        font-family: 'JetBrains Mono', monospace;
+        letter-spacing: 0.04em;
+    }
+
+    .header-chip {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 4px;
+        padding: 2px 8px;
+        color: #94A3B8;
+    }
+
+    /* Метрика-карталар (Streamlit st.metric overhaul) */
+    [data-testid="stMetric"], .metric-card {
+        background: rgba(13, 20, 38, 0.65) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 12px !important;
+        padding: 14px 18px !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35) !important;
+        transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    [data-testid="stMetric"]:hover, .metric-card:hover {
+        border-color: rgba(0, 229, 255, 0.35) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 10px 30px rgba(0, 229, 255, 0.1) !important;
+    }
+
+    [data-testid="stMetricLabel"], .metric-label {
+        font-size: 0.72rem !important;
+        font-weight: 600 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.08em !important;
+        color: #94A3B8 !important;
+        margin-bottom: 4px !important;
+    }
+
+    [data-testid="stMetricValue"], .metric-value {
+        font-size: 1.85rem !important;
+        font-weight: 700 !important;
+        font-family: 'JetBrains Mono', 'Inter', monospace !important;
+        font-variant-numeric: tabular-nums !important;
+        color: #F8FAFC !important;
+        letter-spacing: -0.02em !important;
+    }
+
+    [data-testid="stMetricDelta"] {
+        font-size: 0.8rem !important;
+        font-weight: 600 !important;
+        font-family: 'Inter', sans-serif !important;
+    }
+
+    /* Тәуекел индикаторлары */
+    .risk-high   { color: #FF3D71; font-weight: 700; }
+    .risk-medium { color: #FFB300; font-weight: 700; }
+    .risk-low    { color: #00E676; font-weight: 700; }
+
+    /* Қойындылар (Segmented Tabs Bar) */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 6px;
+        background: rgba(10, 15, 29, 0.75);
+        padding: 6px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        margin-bottom: 20px;
+    }
+
     .stTabs [data-baseweb="tab"] {
-        font-size: 1rem;
-        font-weight: 600;
-        padding: 8px 20px;
+        border-radius: 8px !important;
+        font-size: 0.88rem !important;
+        font-weight: 600 !important;
+        color: #94A3B8 !important;
+        padding: 8px 18px !important;
+        transition: all 0.2s ease !important;
+        border: 1px solid transparent !important;
+        background: transparent !important;
     }
 
-    /* Sidebar */
+    .stTabs [data-baseweb="tab"]:hover {
+        color: #F8FAFC !important;
+        background: rgba(255, 255, 255, 0.04) !important;
+    }
+
+    .stTabs [aria-selected="true"] {
+        background: rgba(0, 229, 255, 0.12) !important;
+        color: #00E5FF !important;
+        border: 1px solid rgba(0, 229, 255, 0.3) !important;
+        box-shadow: 0 0 16px rgba(0, 229, 255, 0.15) !important;
+    }
+
+    .stTabs [data-baseweb="tab-border"] { display: none !important; }
+    .stTabs [data-baseweb="tab-highlight"] { display: none !important; }
+
+    /* Sidebar — Deep Obsidian Command Navigation */
     [data-testid="stSidebar"] {
-        background: rgba(13, 27, 42, 0.95);
-        border-right: 1px solid rgba(64, 196, 255, 0.1);
+        background: linear-gradient(180deg, #070B12 0%, #0A1124 100%) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h2,
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h3 {
+        color: #00E5FF !important;
+        font-size: 0.95rem !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.04em !important;
+        text-transform: uppercase !important;
+    }
+
+    /* Батырмалар (Cyber Buttons) */
+    div.stButton > button, div.stDownloadButton > button {
+        background: linear-gradient(135deg, rgba(0, 229, 255, 0.12) 0%, rgba(124, 77, 255, 0.12) 100%) !important;
+        border: 1px solid rgba(0, 229, 255, 0.35) !important;
+        color: #00E5FF !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        font-size: 0.88rem !important;
+        letter-spacing: 0.02em !important;
+        padding: 8px 18px !important;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    div.stButton > button:hover, div.stDownloadButton > button:hover {
+        background: linear-gradient(135deg, rgba(0, 229, 255, 0.25) 0%, rgba(124, 77, 255, 0.25) 100%) !important;
+        border-color: #00E5FF !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 0 20px rgba(0, 229, 255, 0.3) !important;
+        transform: translateY(-1px) !important;
+    }
+
+    /* Селекторлар & Слайдерлер */
+    div[data-baseweb="select"] > div {
+        background: rgba(13, 20, 38, 0.8) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 8px !important;
+        color: #F8FAFC !important;
+    }
+
+    div[data-baseweb="select"] > div:hover {
+        border-color: rgba(0, 229, 255, 0.4) !important;
+    }
+
+    div[data-testid="stSlider"] [role="slider"] {
+        background-color: #00E5FF !important;
+        box-shadow: 0 0 10px #00E5FF !important;
+    }
+
+    /* Кестелер & Expanders */
+    div[data-testid="stExpander"] {
+        background: rgba(13, 20, 38, 0.5) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 12px !important;
+    }
+
+    div[data-testid="stAlert"] {
+        background: rgba(13, 20, 38, 0.65) !important;
+        backdrop-filter: blur(14px) !important;
+        border-radius: 10px !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
     }
 
     /* Прогресс-барлар */
@@ -156,8 +374,21 @@ st.markdown("""
         overflow: hidden;
     }
 
-    /* Контейнер кеңістігі */
-    .block-container { padding-top: 1rem; }
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        background: #070B12;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #00E5FF;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -331,30 +562,39 @@ def render_ai_summary(psi_val, smai_val, high_risk_count, moderate_risk_count, l
 
 PLOTLY_THEME = dict(
     paper_bgcolor="rgba(0,0,0,0)",
-    plot_bgcolor="rgba(255,255,255,0.03)",
-    font=dict(color="rgba(255,255,255,0.8)", family="Inter"),
+    plot_bgcolor="rgba(10,15,29,0.25)",
+    font=dict(color="#94A3B8", family="Inter, -apple-system, sans-serif", size=11),
     xaxis=dict(
-        gridcolor="rgba(255,255,255,0.07)",
-        linecolor="rgba(255,255,255,0.1)",
+        gridcolor="rgba(255,255,255,0.04)",
+        zerolinecolor="rgba(255,255,255,0.08)",
+        linecolor="rgba(255,255,255,0.08)",
+        tickfont=dict(color="#64748B", size=10),
     ),
     yaxis=dict(
-        gridcolor="rgba(255,255,255,0.07)",
-        linecolor="rgba(255,255,255,0.1)",
+        gridcolor="rgba(255,255,255,0.04)",
+        zerolinecolor="rgba(255,255,255,0.08)",
+        linecolor="rgba(255,255,255,0.08)",
+        tickfont=dict(color="#64748B", size=10),
+    ),
+    hoverlabel=dict(
+        bgcolor="#0F172A",
+        bordercolor="rgba(0,229,255,0.4)",
+        font=dict(color="#F8FAFC", family="Inter, sans-serif"),
     ),
 )
 
 
 def psi_color(psi_val: float) -> str:
     if psi_val is None:
-        return "#888888"
+        return "#64748B"
     if psi_val < PSI_THRESHOLD_LOW:
-        return "#FF3B30"
+        return "#FF3D71"
     elif psi_val > PSI_THRESHOLD_HIGH:
-        return "#FF9500"
+        return "#FFB300"
     elif psi_val < -1.0:
         return "#FF6B35"
     else:
-        return "#34C759"
+        return "#00E676"
 
 
 # ─────────────────────────────────────────────
@@ -367,6 +607,8 @@ def generate_excel_report(
     wheat_price_val: float, grain_prod_val: float,
     risk_lvl: str, df_vuln_arg, df_econ_arg,
     lang: str = "kk",
+    crop: str = "Пшеница яровая",
+    crop_kc: float = 1.15,
 ) -> bytes:
     """Excel (.xlsx) форматында аналитикалық есепті жадта генерациялайды."""
     output = io.BytesIO()
@@ -386,6 +628,7 @@ def generate_excel_report(
                     "Есептің жасалған күні",
                     "Талданатын маусым",
                     "Мониторинг өңірі",
+                    "Негізгі дақыл (Multi-Crop)",
                     "PhenoShift Index (PSI)",
                     "Топырақ ылғалдылығының индикаторы (SMAI)",
                     "Агро-тәуекел деңгейі",
@@ -398,6 +641,7 @@ def generate_excel_report(
                     today,
                     str(year),
                     region,
+                    f"{crop} (FAO Kc={crop_kc:.2f})",
                     f"{psi_val:+.3f} (10 жылдық нормадан ауытқу)",
                     f"{smai_val:.2f}",
                     risk_text,
@@ -463,6 +707,7 @@ def generate_excel_report(
                     "Дата формирования отчёта",
                     "Анализируемый сезон",
                     "Регион мониторинга",
+                    "Целевая культура (Multi-Crop)",
                     "PhenoShift Index (PSI)",
                     "Индикатор влажности почвы (SMAI)",
                     "Уровень агрориска",
@@ -475,6 +720,7 @@ def generate_excel_report(
                     today,
                     str(year),
                     region,
+                    f"{crop} (FAO Kc={crop_kc:.2f})",
                     f"{psi_val:+.3f} (отклонение от 10-летней нормы)",
                     f"{smai_val:.2f}",
                     risk_text,
@@ -537,121 +783,59 @@ def generate_markdown_report(
     wheat_price_val: float, grain_prod_val: float,
     risk_lvl: str, high_risk: int, moderate_risk: int,
     lang: str = "kk",
+    crop: str = "Пшеница яровая",
+    crop_kc: float = 1.15,
+    region_key: Optional[str] = None,
+    crop_key: Optional[str] = None,
+    shock_factor: float = 0.0,
 ) -> str:
-    """Аналитикалық анықтаманы Markdown форматында генерациялайды."""
-    today = datetime.datetime.now().strftime("%d.%m.%Y")
-    if lang == "kk":
-        risk_kk = {"HIGH": "🔴 ЖОҒАРЫ", "MEDIUM": "🟡 ОРТАША", "LOW": "🟢 ТӨМЕН"}.get(risk_lvl, "—")
-        rec = {
-            "HIGH": "Шұғыл түрде астық қорын қалыптастыру қажет. Бидайға фьючерстік бағаларды бекіту. Ауыл шаруашылығы министрлігіне жедел хабарлама жіберу.",
-            "MEDIUM": "Топырақ ылғалдылығының апта сайынғы мониторингін күшейту. Егінді сақтандыруды қарастыру. Элеваторларда қажетті қорды сақтау.",
-            "LOW": "Элеваторлардың қуатын мол өнім қабылдауға дайындау. III–IV тоқсандарға экспорттық келісімшарттарды жоспарлау.",
-        }.get(risk_lvl, "—")
-        return f"""# AgriCascade — Аналитикалық анықтама
-## AgriCascade Early Warning System
+    """
+    Генерирует официальную аналитическую записку экспресс-аудита региона
+    (Step 6.2) для акимата и Министерства сельского хозяйства РК.
+    """
+    # Робастное сопоставление региона с ключом по основе слова
+    if not region_key:
+        r_lower = region.lower()
+        if "акмол" in r_lower or "ақмол" in r_lower:
+            region_key = "akmola"
+        elif "костан" in r_lower or "қостан" in r_lower:
+            region_key = "kostanay"
+        elif "павлод" in r_lower:
+            region_key = "pavlodar"
+        elif "ско" in r_lower or "сқо" in r_lower or "север" in r_lower or "солтүст" in r_lower:
+            region_key = "sko"
+        else:
+            region_key = "sko"
 
-**Құрылған күні:** {today}  
-**Талданатын маусым:** {year}  
-**Өңір:** {region} (Солтүстік астық белдеуі)  
+    if not crop_key:
+        c_lower = crop.lower()
+        if "пшениц" in c_lower or "бидай" in c_lower:
+            crop_key = "spring_wheat"
+        elif "ячмен" in c_lower or "арпа" in c_lower:
+            crop_key = "spring_barley"
+        elif "подсолн" in c_lower or "күнбағ" in c_lower:
+            crop_key = "sunflower"
+        elif "лен" in c_lower or "зығыр" in c_lower:
+            crop_key = "flax_linseed"
+        elif "нут" in c_lower or "ноқат" in c_lower or "бұршақ" in c_lower:
+            crop_key = "chickpea"
+        else:
+            crop_key = "spring_wheat"
 
----
-
-## 1. Негізгі индикаторлар
-
-| Көрсеткіш | Мәні |
-|---|---|
-| PhenoShift Index (PSI) | `{psi_val:+.3f}` (климаттық қалыптан ауытқу) |
-| SMAI — Топырақ ылғалдылығының индикаторы | `{smai_val:.2f}` |
-| **Агро-тәуекел деңгейі** | **{risk_kk}** |
-| Бидай бағасының болжамы | ${wheat_price_val:.0f}/т |
-| Жалпы астық түсімінің болжамы | {grain_prod_val:.1f} млн т |
-
----
-
-## 2. Тәуекел аймақтары
-
-- 🔴 **Жоғары тәуекелдегі шаруашылықтар:** {high_risk}
-- 🟡 **Орташа тәуекелдегі шаруашылықтар:** {moderate_risk}
-- 📍 **Өңір:** {region} (Солтүстік астық белдеуі)
-
----
-
-## 3. Агрохолдинг пен Ауыл шаруашылығы министрлігі үшін ұсыныстар
-
-{rec}
-
----
-
-## 4. Әдіснама
-
-- **Sentinel-2** (Copernicus): Оптикалық NDVI суреттері, 10м ажыратымдылық, 5 күндік цикл
-- **Sentinel-1 SAR** (Copernicus): C-диапазонды радарлық суреттер, жылына 365 күн бұлттан өтеді
-- **NASA SMAP**: Топырақ ылғалдылығы спутнигі, 5 см тереңдік
-- **Google Earth Engine**: Петабайттаған спутниктік деректерді бұлттық есептеу
-- **Granger Causality**: PSI-дің бағаларға алдын ала әсер етуінің эконометрикалық моделі (лаг 3–4 ай)
-- **FAOSTAT / Дүниежүзілік банк**: Тарихи экономикалық деректер
-
----
-
-*AgriCascade платформасы арқылы автоматты түрде жасақталды*  
-*GitHub: [Ali-bit-bot-ux/EcoEconomicAnalyzer](https://github.com/Ali-bit-bot-ux/EcoEconomicAnalyzer)*
-"""
-    else:
-        risk_ru = {"HIGH": "🔴 ВЫСОКИЙ", "MEDIUM": "🟡 УМЕРЕННЫЙ", "LOW": "🟢 НИЗКИЙ"}.get(risk_lvl, "—")
-        rec = {
-            "HIGH": "Немедленно сформировать зерновой резерв. Зафиксировать фьючерсные цены на пшеницу. Уведомить Министерство сельского хозяйства.",
-            "MEDIUM": "Усилить еженедельный мониторинг влажности почвы. Рассмотреть страхование урожая. Сохранить запасы на элеваторах.",
-            "LOW": "Подготовить мощности элеваторов к приёму высокого урожая. Планировать экспортные контракты на III–IV кварталы.",
-        }.get(risk_lvl, "—")
-        return f"""# AgriCascade — Аналитическая записка
-## AgriCascade Early Warning System
-
-**Дата формирования:** {today}  
-**Сезон анализа:** {year}  
-**Регион:** {region} (Северный зерновой пояс)  
-
----
-
-## 1. Ключевые индикаторы
-
-| Показатель | Значение |
-|---|---|
-| PhenoShift Index (PSI) | `{psi_val:+.3f}` (отклонение от климатической нормы) |
-| SMAI — Индикатор влажности почвы | `{smai_val:.2f}` |
-| **Уровень агрориска** | **{risk_ru}** |
-| Прогноз цены пшеницы | ${wheat_price_val:.0f}/т |
-| Прогноз валового сбора зерна | {grain_prod_val:.1f} млн т |
-
----
-
-## 2. Зоны риска
-
-- 🔴 **Хозяйств с высоким риском:** {high_risk}
-- 🟡 **Хозяйств с умеренным риском:** {moderate_risk}
-- 📍 **Регион:** {region} (Северный зерновой пояс)
-
----
-
-## 3. Рекомендации для агрохолдинга и МСХ
-
-{rec}
-
----
-
-## 4. Методология
-
-- **Sentinel-2** (Copernicus): Оптические снимки NDVI, разрешение 10м, 5-дневный цикл
-- **Sentinel-1 SAR** (Copernicus): Радарные снимки C-диапазона, пробивают облака 365 дней/год
-- **NASA SMAP**: Спутник влажности почвы, глубина 5 см
-- **Google Earth Engine**: Облачные вычисления над петабайтами спутниковых данных
-- **Granger Causality**: Эконометрическая модель опережающего влияния PSI на цены (лаг 3–4 мес.)
-- **FAOSTAT / World Bank**: Исторические экономические данные
-
----
-
-*Сгенерировано автоматически платформой AgriCascade*  
-*GitHub: [Ali-bit-bot-ux/EcoEconomicAnalyzer](https://github.com/Ali-bit-bot-ux/EcoEconomicAnalyzer)*
-"""
+    try:
+        return generate_executive_audit_markdown(
+            year=year,
+            region_key=region_key,
+            crop_key=crop_key,
+            current_psi=psi_val,
+            smai_val=smai_val,
+            shock_factor=shock_factor,
+            lang=lang,
+        )
+    except Exception as e:
+        # Fallback к базовой сводке
+        today = datetime.datetime.now().strftime("%d.%m.%Y")
+        return f"# AgriCascade — Экспресс-аудит ({today})\n\n**Регион:** {region}\n**Ошибка расширенной генерации:** {e}"
 
 
 # ─────────────────────────────────────────────
@@ -696,16 +880,47 @@ with st.sidebar:
         index=0,
     )
     
-    region_options = (
-        ["Солтүстік Қазақстан обл.", "Қостанай обл.", "Ақмола обл."]
-        if lang == "kk" else
-        ["Северо-Казахстанская обл.", "Костанайская обл.", "Акмолинская обл."]
-    )
-    selected_region = st.selectbox(
-        "Өңір (Солтүстік Қазақстан)" if lang == "kk" else "Регион (Северный Казахстан)",
-        options=region_options,
+    # ── 1. Регион анализа (4 ключевые области Зернового пояса) ──
+    region_keys = list(GRAIN_BELT_REGIONS.keys())
+    selected_region_key = st.selectbox(
+        "🌍 Талдау өңірі (Астық белдеуі)" if lang == "kk" else "🌍 Область анализа (Зерновой пояс)",
+        options=region_keys,
+        format_func=lambda k: GRAIN_BELT_REGIONS[k]["name_kk" if lang == "kk" else "name_ru"],
         index=0,
     )
+    selected_reg_info = GRAIN_BELT_REGIONS[selected_region_key]
+    selected_region = selected_reg_info["short_name_kk" if lang == "kk" else "short_name_ru"]
+
+    # ── 2. Целевая сельхозкультура (Multi-crop Engine / FAO-56) ──
+    crop_keys = list(TARGET_CROPS.keys())
+    selected_crop_key = st.selectbox(
+        "🌾 Негізгі дақыл (Multi-Crop)" if lang == "kk" else "🌾 Целевая культура (Multi-Crop)",
+        options=crop_keys,
+        format_func=lambda c: f"{'🌾' if 'wheat' in c or 'barley' in c else '🌻' if 'sun' in c else '🌱'} {TARGET_CROPS[c]['name_kk' if lang == 'kk' else 'name_ru']}",
+        index=0,
+    )
+    selected_crop_info = TARGET_CROPS[selected_crop_key]
+    crop_kc = selected_crop_info["kc"]
+    crop_name = selected_crop_info["name_kk" if lang == "kk" else "name_ru"]
+
+    # Био-карточка культуры в сайдбаре
+    with st.expander("🌱 Био-параметрлер (FAO-56)" if lang == "kk" else "🌱 Био-параметры (FAO-56)", expanded=False):
+        st.markdown(f"**{crop_name}**")
+        st.markdown(f"- **Коэффициент $K_c$:** `{crop_kc:.2f}` ({selected_crop_info['fao_ref'].split(':')[0]})")
+        st.markdown(f"- **Тамыр / Корни:** `{selected_crop_info['root_depth_meters']}` м")
+        st.markdown(f"- **Төзімділік / Толерантность:** `{selected_crop_info['drought_tolerance_score']}/5.0`")
+        st.markdown(f"- **Қауіпті кезең / Фаза:** {selected_crop_info['critical_phase_kk' if lang == 'kk' else 'critical_phase_ru']}")
+
+    # Региональная сводка
+    with st.expander("📍 Өңір сипаттамасы" if lang == "kk" else "📍 Характеристика региона", expanded=False):
+        arable_lbl = "Егістік алқабы" if lang == "kk" else "Пашня"
+        basin_lbl = "Өзен алабы" if lang == "kk" else "Бассейн"
+        soil_lbl = "Топырақ түрі" if lang == "kk" else "Почва"
+        districts_lbl = "Аудандар" if lang == "kk" else "Районы"
+        st.markdown(f"- **{arable_lbl}:** `{selected_reg_info['arable_area_ha'] / 1e6:.1f}` млн га")
+        st.markdown(f"- **{basin_lbl}:** {selected_reg_info['basin_kk' if lang == 'kk' else 'basin_ru']}")
+        st.markdown(f"- **{soil_lbl}:** {selected_reg_info['dominant_soil_kk' if lang == 'kk' else 'dominant_soil_ru']}")
+        st.markdown(f"- **{districts_lbl}:** {', '.join(selected_reg_info['districts_kk' if lang == 'kk' else 'districts_ru'][:3])}...")
 
     st.divider()
     st.markdown("### ⚡ Астық белдеуін стресс-тестілеу" if lang == "kk" else "### ⚡ Стресс-тестирование зернового пояса")
@@ -758,10 +973,36 @@ header_subtitle = (
     "через спутниковые данные · Google Earth Engine · Эконометрика"
 )
 
+status_badge_text = "ТІКЕЛЕЙ ТЕЛЕМЕТРИЯ (LIVE)" if lang == "kk" else "ПРЯМАЯ ТЕЛЕМЕТРИЯ (LIVE)"
+chips_markup = (
+    '<span class="header-chip">🛰️ SENTINEL-1 SAR</span> '
+    '<span class="header-chip">🛰️ MODIS TERRA/AQUA</span> '
+    '<span class="header-chip">🌐 ERA5 REANALYSIS</span> '
+    '<span class="header-chip">🚂 ҚТЖ ТАРИФТЕРІ</span> '
+    '<span class="header-chip">📈 GRANGER PASS-THROUGH</span> '
+    '<span class="header-chip">🏆 DARYN FINAL 2026</span>'
+    if lang == "kk" else
+    '<span class="header-chip">🛰️ SENTINEL-1 SAR</span> '
+    '<span class="header-chip">🛰️ MODIS TERRA/AQUA</span> '
+    '<span class="header-chip">🌐 ERA5 REANALYSIS</span> '
+    '<span class="header-chip">🚂 ТАРИФЫ КТЖ</span> '
+    '<span class="header-chip">📈 GRANGER PASS-THROUGH</span> '
+    '<span class="header-chip">🏆 DARYN FINAL 2026</span>'
+)
+
 st.markdown(f"""
 <div class="agri-header">
-    <p class="agri-title">🌾 AgriCascade — Early Warning System</p>
+    <div class="agri-header-top">
+        <p class="agri-title">🌾 AgriCascade — Early Warning System</p>
+        <div class="header-status-pill">
+            <span class="live-pulse-dot"></span>
+            <span>{status_badge_text}</span>
+        </div>
+    </div>
     <p class="agri-subtitle">{header_subtitle}</p>
+    <div class="header-chips">
+        {chips_markup}
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -861,17 +1102,21 @@ elif df_hydro is not None and not df_hydro.empty:
     elif y_col in df_hydro.columns:
         smai_current = float(df_hydro[y_col].iloc[-1])
 
-# ─── Шок симуляциясы (Stress-Test) ───────────────────────────
+# ─── Шок симуляциясы (Stress-Test / What-If Multi-Crop Engine) ─
+
+# Биологиялық сезімталдық коэффициенті (FAO-56 / FAO-33 стандарты):
+# Жоғары Kc және төмен төзімділікке ие дақылдар ылғал тапшылығынан көбірек зардап шегеді
+crop_sensitivity = (crop_kc / 1.10) * (4.2 / max(selected_crop_info.get("drought_tolerance_score", 3.5), 1.0))
 
 if shock_ili_smai < 0:
     shock_factor = abs(shock_ili_smai) / 100.0  # 0.0 - 0.5
-    current_psi -= shock_factor * 5.0
+    current_psi -= shock_factor * 5.0 * crop_sensitivity
     wheat_price *= (1.0 + shock_factor * 0.6)
-    grain_prod *= (1.0 - shock_factor * 0.4)
+    grain_prod *= max(0.2, 1.0 - shock_factor * 0.42 * crop_sensitivity)
     smai_current -= shock_factor * 6.0
 
     if df_vuln is not None and not df_vuln.empty:
-        df_vuln["vuln_score"] = np.clip(df_vuln["vuln_score"] + shock_factor * 70, 0, 100)
+        df_vuln["vuln_score"] = np.clip(df_vuln["vuln_score"] + shock_factor * 70 * crop_sensitivity, 0, 100)
         df_vuln["risk_level"] = np.where(
             df_vuln["vuln_score"] >= 75, "HIGH",
             np.where(df_vuln["vuln_score"] >= 40, "MEDIUM", "LOW")
@@ -939,11 +1184,11 @@ with col4:
     )
 
 with col5:
-    basins_monitored = 3
+    basins_monitored = 4
     st.metric(
         "Астық белдеуі алаптары" if lang == "kk" else "Бассейнов зернового пояса",
         f"{basins_monitored}",
-        help="Тобыл, Есіл (Ишим), Нұра — Солтүстік Қазақстанның негізгі өзен артериялары" if lang == "kk" else "Тобол, Ишим (Есиль), Нура — речные артерии Северного Казахстана"
+        help="Тобыл, Есіл (Ишим), Нұра, Ертіс (Иртыш) — 4 негізгі өзен артериясы" if lang == "kk" else "Тобол, Ишим, Нура, Иртыш — 4 ключевые речные артерии зернового пояса"
     )
 
 st.divider()
@@ -957,8 +1202,8 @@ if df_vuln is not None and not df_vuln.empty:
     moderate_risk_count = len(df_vuln[df_vuln["risk_level"] == "MEDIUM"])
 else:
     shock_factor = abs(shock_ili_smai) / 100.0 if 'shock_ili_smai' in locals() else 0
-    high_risk_count = int(12 + shock_factor * 40)
-    moderate_risk_count = int(18 + shock_factor * 20)
+    high_risk_count = int(12 + shock_factor * 40 * crop_sensitivity)
+    moderate_risk_count = int(18 + shock_factor * 20 * crop_sensitivity)
 
 render_ai_summary(
     psi_val=current_psi, 
@@ -967,6 +1212,32 @@ render_ai_summary(
     moderate_risk_count=moderate_risk_count,
     lang=lang,
 )
+
+# ─── Реактивті What-If стресс карточкасы (Step 3.3) ────────────
+if shock_ili_smai < 0:
+    shock_pct = abs(shock_ili_smai)
+    yield_loss_cwt = round((shock_factor * crop_sensitivity) * 5.2, 1)
+    yield_loss_pct = round(shock_factor * crop_sensitivity * 38.0, 1)
+    arable_area_m = selected_reg_info["arable_area_ha"] / 1e6
+    elevator_deficit_k_ton = int(shock_factor * crop_sensitivity * arable_area_m * 190.0)
+    price_impact_usd = int(wheat_price - (wheat_price / (1.0 + shock_factor * 0.6)))
+
+    if lang == "kk":
+        st.warning(f"""
+        ⚡ **What-If Симуляторы белсенді: Топырақ ылғалдылығының {shock_pct}%-ға төмендеуі**  
+        • **Нысаналы дақыл:** {crop_name} (FAO $K_c={crop_kc:.2f}$, Төзімділік: {selected_crop_info['drought_tolerance_score']}/5)  
+        • **Болжамды өнімділік шығыны:** `- {yield_loss_cwt} ц/га` (`-{yield_loss_pct}%`)  
+        • **{selected_reg_info['name_kk']} элеваторларындағы дефицит:** `- {elevator_deficit_k_ton:,} мың тонна`  
+        • **Биржалық баға қысымы (лаг 90 күн):** `+${price_impact_usd}/т` (өсім)  
+        """, icon="⚠️")
+    else:
+        st.warning(f"""
+        ⚡ **Активен What-If Симулятор: Снижение почвенной влаги на {shock_pct}%**  
+        • **Целевая культура:** {crop_name} (FAO $K_c={crop_kc:.2f}$, Толерантность: {selected_crop_info['drought_tolerance_score']}/5)  
+        • **Прогнозируемые потери урожайности:** `- {yield_loss_cwt} ц/га` (`-{yield_loss_pct}%`)  
+        • **Ожидаемый дефицит на элеваторах ({selected_reg_info['name_ru']}):** `- {elevator_deficit_k_ton:,} тыс. тонн`  
+        • **Давление на биржевую цену (лаг 90 дней):** `+${price_impact_usd}/т` к котировкам  
+        """, icon="⚠️")
 
 with st.sidebar:
     st.markdown("### 📥 Есептерді жүктеу" if lang == "kk" else "### 📥 Выгрузка отчёта")
@@ -982,6 +1253,8 @@ with st.sidebar:
             df_vuln_arg=df_vuln,
             df_econ_arg=df_econ,
             lang=lang,
+            crop=crop_name,
+            crop_kc=crop_kc,
         )
         st.download_button(
             label="📊 Есепті жүктеу (.xlsx)" if lang == "kk" else "📊 Скачать отчёт (.xlsx)",
@@ -1006,16 +1279,23 @@ with st.sidebar:
         high_risk=high_risk_count,
         moderate_risk=moderate_risk_count,
         lang=lang,
+        crop=crop_name,
+        crop_kc=crop_kc,
+        region_key=selected_region_key,
+        crop_key=selected_crop_key,
+        shock_factor=shock_factor if shock_ili_smai < 0 else 0.0,
     )
     st.download_button(
-        label="📄 Аналитикалық жазба (.md)" if lang == "kk" else "📄 Аналитическая записка (.md)",
+        label="📥 Экспресс-аудит (.md)" if lang == "kk" else "📥 Экспресс-аудит региона (.md)",
         data=sb_md.encode("utf-8"),
-        file_name=f"AgriCascade_{selected_year}_{selected_region[:3]}_Note.md",
+        file_name=f"AgriCascade_{selected_year}_{selected_region_key}_Executive_Audit.md",
         mime="text/markdown",
         use_container_width=True,
         key="sidebar_btn_md",
-        help="Агрохолдинг және АШМ басшылығы үшін Markdown-жазба" if lang == "kk" else "Markdown-записка для руководства агрохолдинга и МСХ",
+        help="Әкімдік пен АШМ үшін толық талдамалық анықтама" if lang == "kk" else "Полная аналитическая записка для руководства акимата и МСХ",
     )
+    with st.expander("👁️ " + ("Анықтаманы оқу" if lang == "kk" else "Просмотреть записку"), expanded=False):
+        st.markdown(sb_md)
 
 st.divider()
 
@@ -1087,7 +1367,7 @@ with tab1:
                 x=df_norm["doy"],
                 y=df_norm["ndvi_mean"],
                 name=norm_mean_name,
-                line=dict(color="#40c4ff", width=2.5, dash="dot"),
+                line=dict(color="#00E5FF", width=2.5, dash="dot", shape="spline"),
             ))
 
         # Таңдалған жылдың NDVI қисығы (Тарихи деректерден немесе модельдеу)
@@ -1111,21 +1391,21 @@ with tab1:
                 df_year_plot["ndvi"] = np.clip(df_year_plot["ndvi"] * 1.15 + 0.02, 0.05, 0.9)
 
         if not df_year_plot.empty and "doy" in df_year_plot.columns:
-            trace_color = "#FF3B30" if selected_year in DROUGHT_YEARS else ("#34C759" if selected_year in {2017, 2022, 2024} else "#FF6B35")
+            trace_color = "#FF3D71" if selected_year in DROUGHT_YEARS else ("#00E676" if selected_year in {2017, 2022, 2024} else "#FFB300")
             fig_ndvi.add_trace(go.Scatter(
                 x=df_year_plot["doy"],
                 y=df_year_plot["ndvi"],
                 name=cur_year_ndvi_name,
-                line=dict(color=trace_color, width=3),
+                line=dict(color=trace_color, width=3, shape="spline"),
                 mode="lines",
             ))
 
         now_doy = datetime.datetime.now().timetuple().tm_yday
         fig_ndvi.add_vline(
             x=now_doy, line_dash="dash",
-            line_color="#34C759",
+            line_color="#00E676",
             annotation_text=today_annotation,
-            annotation_font_color="#34C759",
+            annotation_font_color="#00E676",
         )
 
         chart_title = (
@@ -1141,11 +1421,6 @@ with tab1:
             yaxis_title="NDVI",
             height=380,
             **PLOTLY_THEME,
-            legend=dict(
-                bgcolor="rgba(0,0,0,0.3)",
-                bordercolor="rgba(255,255,255,0.1)",
-                borderwidth=1,
-            ),
         )
         st.plotly_chart(fig_ndvi, width='stretch')
 
@@ -1190,57 +1465,96 @@ with tab1:
     st.markdown("### 🗺️ NDVI-аномалияларының географиялық картасы" if lang == "kk" else "### 🗺️ Географическая карта NDVI-аномалий")
 
     if FOLIUM_AVAILABLE:
+        reg_center = selected_reg_info["center"]
+        reg_zoom = selected_reg_info["zoom"]
         m = folium.Map(
-            location=[53.9, 68.0],
-            zoom_start=7,
-            tiles="OpenStreetMap",
+            location=reg_center,
+            zoom_start=reg_zoom,
+            tiles=TACTICAL_MAP_TILES,
+            attr=TACTICAL_MAP_ATTR,
         )
 
-        rng = np.random.default_rng(42)
-        n_points = 30
-        lats = rng.uniform(53.3, 54.5, n_points)
-        lons = rng.uniform(66.5, 69.5, n_points)
-        psi_normalized = current_psi + rng.normal(0, 0.3, n_points)
+        # ─── Choropleth GeoJSON Layer (Phase 4: Реактивная ГИС-карта) ───
+        active_shock_factor = shock_factor if 'shock_factor' in locals() else 0.0
+        geojson_data = compute_district_choropleth_geojson(
+            region_id=selected_region_key,
+            lang=lang,
+            current_psi=current_psi,
+            crop_kc=crop_kc,
+            crop_tolerance=selected_crop_info.get("drought_tolerance_score", 3.5),
+            crop_name=crop_name,
+            shock_factor=active_shock_factor,
+        )
 
-        for lat, lon, psi_v in zip(lats, lons, psi_normalized):
-            color = "red" if psi_v < PSI_THRESHOLD_LOW else "orange" if psi_v < -0.5 else "green"
-            folium.CircleMarker(
-                location=[lat, lon],
-                radius=8,
-                color=color,
-                fill=True,
-                fill_color=color,
-                fill_opacity=0.6,
-                popup=f"PSI: {psi_v:.2f}",
-            ).add_to(m)
+        def style_fn(feat):
+            fill_c = feat["properties"]["fill_color"]
+            return {
+                "fillColor": fill_c,
+                "color": fill_c,
+                "weight": 2.5,
+                "fillOpacity": 0.38,
+            }
 
-        poly_popup = "Солтүстік Қазақстан облысы" if lang == "kk" else "Северо-Казахстанская область"
-        folium.Polygon(
-            locations=[[lat, lon] for lon, lat in SKO_POLYGON],
-            color="#40c4ff",
-            weight=2,
-            fill=False,
-            popup=poly_popup,
+        def highlight_fn(feat):
+            return {
+                "fillColor": feat["properties"]["fill_color"],
+                "color": "#ffffff",
+                "weight": 3.5,
+                "fillOpacity": 0.65,
+            }
+
+        folium.GeoJson(
+            geojson_data,
+            style_function=style_fn,
+            highlight_function=highlight_fn,
+            tooltip=folium.GeoJsonTooltip(
+                fields=["name", "risk_label", "psi", "available_moisture_pct"],
+                aliases=[
+                    "Аудан / Район:" if lang == "kk" else "Район:",
+                    "Тәуекел / Риск:" if lang == "kk" else "Статус риска:",
+                    "PSI:" if lang == "kk" else "Индекс PSI:",
+                    "Ылғал қоры / Влага:" if lang == "kk" else "Влага в почве:",
+                ],
+                style="background-color: rgba(13, 27, 42, 0.95); color: white; font-size: 12px; padding: 8px; border-radius: 6px; border: 1px solid #40c4ff;",
+            ),
+            popup=folium.GeoJsonPopup(
+                fields=["tooltip_html"],
+                labels=False,
+            ),
         ).add_to(m)
+
+        # Маркеры центров районов с плашками статуса
+        for feat in geojson_data["features"]:
+            props = feat["properties"]
+            coords = feat["geometry"]["coordinates"][0]
+            c_lon = sum(p[0] for p in coords) / len(coords)
+            c_lat = sum(p[1] for p in coords) / len(coords)
+            color = props["fill_color"]
+            folium.map.Marker(
+                [c_lat, c_lon],
+                icon=folium.DivIcon(
+                    html=f'''<div style="color: #fff; font-size: 11px; font-weight: 700; white-space: nowrap; background: rgba(10, 15, 30, 0.9); padding: 3px 8px; border-radius: 4px; border: 1.5px solid {color}; box-shadow: 0 2px 6px rgba(0,0,0,0.7); display: inline-block;">{props["name"]} (R={props["risk_score"]:.0f})</div>''',
+                    icon_size=(100, 20),
+                    icon_anchor=(50, 10),
+                ),
+            ).add_to(m)
 
         col_map, col_legend = st.columns([3, 1])
         with col_map:
-            st_folium(m, height=400, returned_objects=[], use_container_width=True)
+            st_folium(m, height=430, returned_objects=[], use_container_width=True)
         with col_legend:
+            st.markdown("#### 🗺️ " + ("Аудандар мониторингі" if lang == "kk" else "Мониторинг районов"))
+            for feat in geojson_data["features"]:
+                p = feat["properties"]
+                emoji = "🔴" if p["risk_level"] == "HIGH" else ("🟡" if p["risk_level"] == "MEDIUM" else "🟢")
+                st.markdown(f"**{emoji} {p['name']}**")
+                st.caption(f"{p['arable_ha'] // 1000:,}k га | PSI: `{p['psi']:+.2f}` | R: `{p['risk_score']:.0f}`")
+            
+            st.divider()
             if lang == "kk":
-                st.markdown("""
-                **Картаның шартты белгілері:**
-                - 🔴 PSI < -1.5 (Критикалық тапшылық)
-                - 🟡 PSI -1.5...-0.5 (Тәуекел аймағы)
-                - 🟢 PSI > -0.5 (Қалыпты жағдай)
-                """)
+                st.caption("Кез келген ауданды басып, кеңейтілген агрономиялық диагноз бен ХПП қашықтығын көріңіз.")
             else:
-                st.markdown("""
-                **Легенда карты:**
-                - 🔴 PSI < -1.5 (Критично)
-                - 🟡 PSI -1.5...-0.5 (Риск)
-                - 🟢 PSI > -0.5 (Норма)
-                """)
+                st.caption("Кликните на любой район для детальной агрономической справки и плеча до ХПП.")
     else:
         st.warning("Интерактивті карта үшін `folium` және `streamlit-folium` кітапханаларын орнатыңыз" if lang == "kk" else "Установи `folium` и `streamlit-folium` для интерактивной карты")
 
@@ -1254,37 +1568,115 @@ with tab2:
         st.markdown("## 💧 HydroRisk — Астық белдеуінің су теңгерімі")
         st.markdown(
             "Солтүстік Қазақстанның негізгі өзен алаптарындағы топырақ ылғалдылығының спутниктік мониторингі (NASA SMAP 9 км). "
-            "Тобыл, Есіл және Нұра өзендері алаптарындағы ылғал тапшылығы — егін орағына дейін 60–90 күн бұрын өнімділіктің төмендеуінің ерте индикаторы болып табылады."
+            "Тобыл, Есіл, Нұра және Ертіс өзендері алаптарындағы ылғал тапшылығы — егін орағына дейін 60–90 күн бұрын өнімділіктің төмендеуінің ерте индикаторы болып табылады."
         )
     else:
         st.markdown("## 💧 HydroRisk — Водный баланс зернового пояса")
         st.markdown(
             "Спутниковый мониторинг влажности почв (NASA SMAP 9 км) в ключевых речных бассейнах Северного Казахстана. "
-            "Дефицит влаги в бассейнах рек Тобол, Ишим и Нура — ранний индикатор падения урожайности за 60–90 дней до уборочной."
+            "Дефицит влаги в бассейнах рек Тобол, Ишим, Нура и Иртыш — ранний индикатор падения урожайности за 60–90 дней до уборочной."
         )
+
+    # ─── Executive Indicators: Бассейн выбранного региона ───
+    region_to_basin = {
+        "sko": ("ishim", "Есіл / Ишим", "СҚО / Петропавл"),
+        "kostanay": ("tobol", "Тобыл / Тобол", "Қостанай обл."),
+        "akmola": ("nura", "Нұра / Нура", "Ақмола обл."),
+        "pavlodar": ("irtysh", "Ертіс / Иртыш", "Павлодар обл."),
+    }
+    cur_basin_id, cur_basin_name, cur_basin_region = region_to_basin.get(selected_region_key, ("ishim", "Есіл / Ишим", "СҚО"))
+    reg_smai_val = smai_current - (0.2 if cur_basin_id == "tobol" else (-0.1 if cur_basin_id == "nura" else 0.0))
+    smai_delta_pct = int(reg_smai_val * 18)
+
+    col_h1, col_h2, col_h3 = st.columns(3)
+    with col_h1:
+        smai_status_kk = "🔴 Критикалық тапшылық" if reg_smai_val < -1.0 else ("🟡 Орташа стресс" if reg_smai_val < 0 else "🟢 Қалыпты қор")
+        smai_status_ru = "🔴 Критический дефицит" if reg_smai_val < -1.0 else ("🟡 Умеренный стресс" if reg_smai_val < 0 else "🟢 Норма влажности")
+        basin_prefix = "Өзен алабы: " if lang == "kk" else "Бассейн: "
+        st.metric(
+            label="💧 Ылғал қоры (NASA SMAP)" if lang == "kk" else "💧 Запас влаги (NASA SMAP)",
+            value=f"{reg_smai_val:+.2f} SMAI",
+            delta=f"{smai_delta_pct:+d}% нормадан" if lang == "kk" else f"{smai_delta_pct:+d}% от нормы",
+            delta_color="normal" if reg_smai_val >= 0 else "inverse",
+            help=f"{basin_prefix}{cur_basin_name} ({cur_basin_region})"
+        )
+        st.caption(f"**Мәртебе:** {smai_status_kk}" if lang == "kk" else f"**Статус:** {smai_status_ru}")
+
+    with col_h2:
+        lead_time_days = 27 if reg_smai_val < -1.0 else (21 if reg_smai_val < 0 else 14)
+        lead_time_units = "күн" if lang == "kk" else "дней"
+        st.metric(
+            label="⏱️ Ерте ескерту уақыты" if lang == "kk" else "⏱️ Гандикап упреждения",
+            value=f"{lead_time_days} {lead_time_units}",
+            delta="NDVI сарғаюынан бұрын" if lang == "kk" else "Раньше пожелтения NDVI",
+            delta_color="normal",
+            help="Уақыт форасы: топырақтағы ылғал тапшылығы анықталғаннан кейін жапырақтардың сарғаюына дейінгі уақыт" if lang == "kk" else "Фора времени: период между фиксацией дефицита влаги в почве радаром и увяданием листьев по оптике NDVI"
+        )
+        st.caption("✅ **Шешім қабылдау терезесі**" if lang == "kk" else "✅ **Окно принятия мер**")
+
+    with col_h3:
+        price_pred_pct = int(abs(min(reg_smai_val, 0.0)) * 14 + (abs(shock_ili_smai) * 0.4 if 'shock_ili_smai' in locals() else 0))
+        stable_lbl = "0% (Тұрақты)" if lang == "kk" else "0% (Стабильно)"
+        st.metric(
+            label="📈 Биржалық баға қысымы" if lang == "kk" else "📈 Прогноз цен (Лаг 90 дней)",
+            value=f"+{price_pred_pct}%" if price_pred_pct > 0 else stable_lbl,
+            delta="Pearson r = -0.61 (p < 0.05)",
+            delta_color="inverse" if price_pred_pct > 0 else "off",
+            help="Эконометрика: вегетация басындағы топырақ ылғалдылығы 90-120 күннен кейін бидай фьючерстеріне тікелей әсер етеді" if lang == "kk" else "Эконометрика: влажность почвы весной транслируется в цены пшеницы через 90-120 дней"
+        )
+        st.caption("Фьючерстер мен резервке әсері" if lang == "kk" else "Влияние на резервы и форварды")
+
+    # Жюриге арналған ғылыми түсіндірме
+    with st.expander("💡 Ғылыми құндылық: Неліктен оптика (NDVI) емес, топырақ ылғалы (SMAP)?" if lang == "kk" else "💡 Научная ценность: Почему почвенная влага (SMAP), а не оптика (NDVI)?", expanded=False):
+        if lang == "kk":
+            st.markdown("""
+            **1. Диагноз емес, алдын алу (27 күн фора):**  
+            Өсімдік жапырағы (NDVI) топырақта ылғал біткен соң **тек 3–4 аптадан кейін ғана сарғаяды**. Оптика қызарған кезде — өсімдік тіндері өліп, өнім жойылған болады. **SMAP радары** микротолқындар арқылы топырақтың тамыр қабатындағы нақты суды өлшейді және апатты 27 күн бұрын ескертеді.
+            
+            **2. Ресеймен трансшекаралық байланыс:**  
+            Қазақстанның астық белдеуі (Тобыл, Ертіс) көрші елдерден бастау алатын трансшекаралық өзендерге тәуелді. Жоғарғы ағыстағы ылғал тапшылығы — Қазақстан үшін құрғақшылықтың бұлтартпас сигналы.
+            
+            **3. Эконометрика және азық-түлік қауіпсіздігі (Лаг 90 күн):**  
+            Мамыр айындағы ылғал дефициті Грейнджер себептілік тесті бойынша ($p < 0.05$) 3 айдан кейін (тамыз-қыркүйек) астық бағасының өсуіне әкеледі. Бұл мемлекетке бағаны тұрақтандыруға және интервенция жасауға уақыт береді.
+            """)
+        else:
+            st.markdown("""
+            **1. Предупреждение, а не констатация смерти (27 дней форы):**  
+            Оптический индекс зелени (NDVI) падает **только через 3–4 недели после** исчерпания влаги в земле. Когда поле пожелтело на спутниковом снимке — растение уже погибло, спасать нечего. **Радиометр NASA SMAP** проникает в корневой слой и фиксирует засуху за 20–27 дней до видимого увядания.
+            
+            **2. Трансграничные речные артерии (РФ и КНР → РК):**  
+            Главные зерновые бассейны (Тобол, Иртыш) берут начало за пределами страны. Падение влажности в верховьях трансграничных рек — прямой предвестник дефицита воды на полях Казахстана.
+            
+            **3. Эконометрика и продовольственная безопасность (Лаг 90 дней):**  
+            Тест причинности Грейнджера доказывает ($p < 0.05$): весенний дефицит влаги в бассейнах с лагом в 90–120 дней транслируется в ценовой шок на муку и пшеницу. Это даёт МСХ окно в 3 месяца для интервенций и закупки резервов.
+            """)
+
+    st.markdown("---")
 
     df_smap_plot = df_hydro if df_hydro is not None else demo["smap_demo"]
 
-    basins = ["tobol", "ishim", "nura"]
+    basins = ["tobol", "ishim", "nura", "irtysh"]
     if lang == "kk":
         basin_labels = {
             "tobol": "Тобыл өзенінің алабы (Қостанай обл. / Астық белдеуі)",
             "ishim": "Есіл өзенінің алабы (СҚО / Петропавл / Ақмола)",
             "nura": "Нұра өзенінің алабы (Ақмола обл. / Орталық-Солтүстік)",
+            "irtysh": "Ертіс өзенінің алабы (Павлодар обл. / Шығыс-Солтүстік)",
         }
     else:
         basin_labels = {
             "tobol": "Бассейн р. Тобол (Костанайская обл. / Зерновой пояс)",
             "ishim": "Бассейн р. Ишим / Есиль (СКО / Петропавловск / Акмолинская)",
             "nura": "Бассейн р. Нура (Акмолинская обл. / Центрально-Северный)",
+            "irtysh": "Бассейн р. Иртыш (Павлодарская обл. / Северо-Восточный)",
         }
-    basin_colors = {"tobol": "#40c4ff", "ishim": "#7c4dff", "nura": "#34C759"}
+    basin_colors = {"tobol": "#40c4ff", "ishim": "#7c4dff", "nura": "#34C759", "irtysh": "#FF9500"}
 
     fig_hydro = make_subplots(
-        rows=3, cols=1,
+        rows=4, cols=1,
         subplot_titles=[basin_labels.get(b, b) for b in basins],
         shared_xaxes=True,
-        vertical_spacing=0.06,
+        vertical_spacing=0.05,
     )
 
     for i, basin in enumerate(basins, 1):
@@ -1297,13 +1689,13 @@ with tab2:
                 if ref_b is not None:
                     df_ref = df_smap_plot[df_smap_plot["basin"] == ref_b].copy()
                     rng = np.random.default_rng(42 + i)
-                    offset = 0.12 if basin == "ishim" else -0.16
+                    offset = 0.12 if basin == "ishim" else (-0.16 if basin == "nura" else -0.22)
                     df_b = df_ref.copy()
                     df_b["basin"] = basin
                     if "smai" in df_b.columns:
-                        df_b["smai"] = df_ref["smai"] * 0.92 + offset + rng.normal(0, 0.15, len(df_ref))
+                        df_b["smai"] = df_ref["smai"] * 0.90 + offset + rng.normal(0, 0.15, len(df_ref))
                     if "soil_moisture" in df_b.columns:
-                        df_b["soil_moisture"] = np.clip(df_ref["soil_moisture"] * 0.96 + 0.005, 0.02, 0.45)
+                        df_b["soil_moisture"] = np.clip(df_ref["soil_moisture"] * 0.94 + 0.003, 0.02, 0.45)
         else:
             df_b = df_smap_plot.copy()
 
@@ -1366,202 +1758,374 @@ with tab2:
 
 
 # ══════════════════════════════════════════════
-# TAB 3: SiloGrid
+# TAB 3: SiloGrid — Phase 5 (207 ХПП + Rerouting + Price Chain)
 # ══════════════════════════════════════════════
 
 with tab3:
     if lang == "kk":
-        st.markdown("## 🏗️ SiloSentry — Элеваторлық инфрақұрылым мониторингі")
+        st.markdown("## 🏗️ SiloSentry — Элеваторлық логистикалық арбитраж (207 ХПП)")
         st.markdown(
-            "Спутниктік суреттер негізінде толымдылығы бағаланған элеваторлар картасы "
-            "(силос цилиндрлерінің көлеңкесін талдау + NDBI)."
+            "Қазақстанның астық белдеуіндегі **207 астық қабылдау кәсіпорнының** (ХПП) жүктелу мониторингі. "
+            "Нақты уақытта: толымдылық, дефицит аудандары, астық ағынын қайта бағыттау маршруттары (ҚТЖ / автожол) "
+            "және астық→ ұн→ нан бойынша баға берілу тізбегі."
         )
     else:
-        st.markdown("## 🏗️ SiloSentry — Мониторинг элеваторной инфраструктуры")
+        st.markdown("## 🏗️ SiloSentry — Логистический арбитраж (207 ХПП Зернового пояса)")
         st.markdown(
-            "Карта элеваторов с оценкой заполненности на основе спутниковых снимков "
-            "(анализ теней от силосных цилиндров + NDBI)."
+            "Мониторинг **207 хлебоприемных предприятий** (ХПП) четырёх зерновых областей. "
+            "В реальном времени: загрузка, дефицитные районы, маршруты переброски зерна (КТЖ / автотранспорт) "
+            "и эконометрическая цепочка передачи цен зерно→мука→хлеб."
         )
 
-    if df_silos is not None and not df_silos.empty:
-        real_fills = df_silos["estimated_fill_pct"].dropna()
-        real_fills = real_fills[real_fills > 1.0]
-        if len(real_fills) > 0:
-            elev_data = df_silos
-            st.info("📡 Спутниктік талдау деректері (GEE/Sentinel-2)" if lang == "kk" else "📡 Данные спутникового анализа (GEE/Sentinel-2)", icon="✅")
-        else:
-            elev_data = df_silos.copy()
-            fallback_fills = {
-                "Петропавловский элеватор": 62.0,
-                "Кокшетауский элеватор": 38.0,
-                "Костанайский ХПП": 81.0,
-                "Акмолинский элеватор": 44.0,
-                "Павлодарский элеватор": 27.0,
-            }
-            elev_data["estimated_fill_pct"] = elev_data["name"].map(
-                lambda n: next((v for k, v in fallback_fills.items() if k in n), 50.0)
-            )
-            st.warning(
-                "📡 Спутниктік талдау елеулі деректер бермеді (суретте көлеңке жеткіліксіз). АШМК-нің 2024 жылғы тамыздағы индикативті деректері көрсетілген."
-                if lang == "kk" else
-                "📡 Спутниковый анализ не дал значимых данных (недостаточно теней на снимке). Показаны индикативные данные КАМК за август 2024.",
-                icon="⚠️",
-            )
-    else:
-        elev_data = pd.DataFrame(KNOWN_ELEVATORS)
-        elev_data["estimated_fill_pct"] = [62.0, 38.0, 81.0, 44.0, 27.0]
-        elev_data["status"] = ["ACTIVE_PARTIAL", "ACTIVE_PARTIAL", "ACTIVE_FULL", "ACTIVE_PARTIAL", "ACTIVE_LOW"]
+    # ─── Phase 5: Загрузка 207 ХПП с динамическим стрессом (Step 5.1) ────
+    _silo_region_filter = selected_region_key if selected_region_key != "all" else None
+    df_207 = calculate_dynamic_silo_loads(
+        region_filter=_silo_region_filter,
+        shock_factor=shock_factor if shock_ili_smai < 0 else 0.0,
+        crop_sensitivity=crop_sensitivity,
+    )
 
+    # ─── Метрики-карточки: сводка по 207 ХПП ─────────────────────────────
+    total_cap = int(df_207["capacity_t"].sum())
+    total_stored = int(df_207["stored_grain_t"].sum())
+    total_free = int(df_207["free_capacity_t"].sum())
+    n_full = (df_207["status_code"] == "FULL").sum()
+    n_optimal = (df_207["status_code"] == "OPTIMAL").sum()
+    n_deficit = (df_207["status_code"] == "DEFICIT").sum()
+    avg_fill = df_207["current_fill_pct"].mean()
+    n_rail = df_207["railway_access"].sum()
+
+    mc1, mc2, mc3, mc4 = st.columns(4)
+    with mc1:
+        st.metric(
+            "🏗️ " + ("ХПП саны" if lang == "kk" else "ХПП всего"),
+            f"{len(df_207)}",
+            f"🟢{n_full} 🟡{n_optimal} 🔴{n_deficit}"
+        )
+    with mc2:
+        st.metric(
+            "📦 " + ("Жалпы сыйымдылық" if lang == "kk" else "Общая вместимость"),
+            f"{total_cap/1e6:.2f} млн т",
+            f"{avg_fill:.0f}% " + ("толымды" if lang == "kk" else "заполнено")
+        )
+    with mc3:
+        st.metric(
+            "🌾 " + ("Сақталған астық" if lang == "kk" else "Хранится зерна"),
+            f"{total_stored/1e3:.0f} тыс. т",
+            f"{total_free/1e3:.0f} тыс. т " + ("бос" if lang == "kk" else "свободно")
+        )
+    with mc4:
+        st.metric(
+            "🚂 " + ("Теміржол қолжетімділігі" if lang == "kk" else "Ж/д доступ"),
+            f"{n_rail} ХПП",
+            f"{n_rail/len(df_207)*100:.0f}% " + ("қамту" if lang == "kk" else "покрытие")
+        )
+
+    # ─── What-If баннер ───────────────────────────────────────────────────
+    if shock_ili_smai < 0:
+        drop_pct_display = int(shock_factor * crop_sensitivity * 45)
+        st.warning(
+            f"⚡ **What-If (Step 5.1):** "
+            + (f"Құрғақшылық болжамы — элеваторлардың орташа толымдылығы **-{drop_pct_display}%** төмендеді. "
+               f"🔴 Тапшылық ХПП: **{n_deficit} бірлік**."
+               if lang == "kk" else
+               f"Прогноз засухи — заполненность ХПП снижена в среднем на **-{drop_pct_display}%**. "
+               f"🔴 В дефиците: **{n_deficit} ХПП**."),
+            icon="🌡️"
+        )
+
+    st.divider()
+
+    # ═══ ВЕРХНИЙ БЛОК: карта 207 ХПП + таблица-лидерборд ════════════════
     col_map3, col_tbl3 = st.columns([3, 2])
 
     with col_map3:
+        if lang == "kk":
+            st.markdown("#### 🗺️ 207 ХПП-ның интерактивті картасы")
+        else:
+            st.markdown("#### 🗺️ Интерактивная карта 207 ХПП")
+
         if FOLIUM_AVAILABLE:
+            # Центр карты — выбранный регион или весь зерновой пояс
+            map_center = selected_reg_info["center"] if selected_region_key != "all" else [52.5, 68.5]
+            map_zoom = 7 if selected_region_key != "all" else 5
+
             m_silos = folium.Map(
-                location=[53.2, 69.0],
-                zoom_start=6,
-                tiles="OpenStreetMap",
+                location=map_center,
+                zoom_start=map_zoom,
+                tiles=TACTICAL_MAP_TILES,
+                attr=TACTICAL_MAP_ATTR,
             )
 
-            for _, row in elev_data.iterrows():
-                fill_val = row.get("estimated_fill_pct", None)
-                if pd.isna(fill_val) or fill_val is None:
-                    fill_val = 0.0
-                    fill_str = "0%"
+            for _, row in df_207.iterrows():
+                fill_val = float(row.get("current_fill_pct", 50.0))
+                fill_str = f"{fill_val:.0f}%"
+                color = str(row.get("color_hex", "#FF9500"))
+                cap_t = int(row.get("capacity_t", 0))
+                stored_t = int(row.get("stored_grain_t", 0))
+                free_t = int(row.get("free_capacity_t", 0))
+                rail_icon = "🚂" if row.get("railway_access") else "🚛"
+                elev_type = str(row.get("type", ""))
+
+                if lang == "kk":
+                    popup_html = (
+                        f"<div style='min-width:220px;font-family:sans-serif'>"
+                        f"<b style='font-size:13px'>{row['name']}</b><br>"
+                        f"<hr style='margin:4px 0'>"
+                        f"📍 <b>{row.get('region_name_kk','')}</b><br>"
+                        f"📦 Сыйымдылық: <b>{cap_t:,} т</b><br>"
+                        f"🌾 Сақталған: <b>{stored_t:,} т</b><br>"
+                        f"🔓 Бос: <b>{free_t:,} т</b><br>"
+                        f"📊 Толымдылық: <b style='color:{color}'>{fill_str}</b><br>"
+                        f"{rail_icon} {elev_type}"
+                        f"</div>"
+                    )
                 else:
-                    fill_val = float(fill_val)
-                    fill_int = int(round(fill_val))
-                    fill_str = f"{fill_int}%"
+                    popup_html = (
+                        f"<div style='min-width:220px;font-family:sans-serif'>"
+                        f"<b style='font-size:13px'>{row['name']}</b><br>"
+                        f"<hr style='margin:4px 0'>"
+                        f"📍 <b>{row.get('region_name_ru','')}</b><br>"
+                        f"📦 Вместимость: <b>{cap_t:,} т</b><br>"
+                        f"🌾 Хранится: <b>{stored_t:,} т</b><br>"
+                        f"🔓 Свободно: <b>{free_t:,} т</b><br>"
+                        f"📊 Загрузка: <b style='color:{color}'>{fill_str}</b><br>"
+                        f"{rail_icon} {elev_type}"
+                        f"</div>"
+                    )
 
-                color = "#34C759" if fill_val > 70 else "#FF9500" if fill_val > 30 else "#FF3B30"
-
-                capacity = row.get("capacity_t", None)
-                if pd.isna(capacity) or capacity is None:
-                    capacity_str = "белгісіз" if lang == "kk" else "неизвестно"
-                else:
-                    capacity_str = f"{int(capacity):,} т"
-
-                popup_content = (
-                    f"<b>{row['name']}</b><br>Толымдылығы: <b>{fill_str}</b><br>Сыйымдылығы: {capacity_str}"
-                    if lang == "kk" else
-                    f"<b>{row['name']}</b><br>Заполненность: <b>{fill_str}</b><br>Мощность: {capacity_str}"
-                )
+                # Размер маркера — пропорционален вместимости ХПП
+                r = max(5, min(18, cap_t / 12000))
 
                 folium.CircleMarker(
                     location=[row["lat"], row["lon"]],
-                    radius=max(10, fill_val / 8),
+                    radius=r,
                     color=color,
                     fill=True,
                     fill_color=color,
-                    fill_opacity=0.85,
-                    weight=2,
-                    popup=popup_content,
+                    fill_opacity=0.80,
+                    weight=1.5,
+                    popup=folium.Popup(popup_html, max_width=260),
                     tooltip=f"{row['name']} — {fill_str}",
                 ).add_to(m_silos)
 
-                folium.map.Marker(
-                    [row["lat"] + 0.12, row["lon"]],
-                    icon=folium.DivIcon(
-                        html=f'''<div style="color: {color}; font-size: 11px; font-weight: 700; white-space: nowrap; background: rgba(10, 15, 30, 0.88); padding: 2px 6px; border-radius: 4px; border: 1px solid {color}; display: inline-block; box-shadow: 0 2px 6px rgba(0,0,0,0.6);">{fill_str}</div>''',
-                        icon_size=(50, 20),
-                        icon_anchor=(25, 10),
-                    ),
-                ).add_to(m_silos)
-
-            routes_file = PROCESSED_DIR / "logistics_routes.json"
-            if routes_file.exists():
-                with open(routes_file, "r", encoding="utf-8") as f:
-                    routes = json.load(f)
-                
-                stress_center_lbl = "📍 Эко-стресс орталығы" if lang == "kk" else "📍 Эко-Стресс Центр"
-                folium.Marker(
-                    location=[SKO_CENTER[1], SKO_CENTER[0]],
-                    icon=folium.Icon(color="red", icon="warning-sign"),
-                    popup=stress_center_lbl,
-                ).add_to(m_silos)
-
-                for name, route_data in routes.items():
-                    coords = route_data["coords"]
-                    route_tooltip = (
-                        f"{name} бағытына оңтайлы ауыстырып тиеу бағыты ({route_data['length_km']:.1f} км)"
-                        if lang == "kk" else
-                        f"Оптимальный маршрут переброски к {name} ({route_data['length_km']:.1f} км)"
-                    )
-                    folium.PolyLine(
-                        locations=coords,
-                        color="#40c4ff",
-                        weight=3,
-                        dash_array="5, 10",
-                        opacity=0.8,
-                        tooltip=route_tooltip,
-                    ).add_to(m_silos)
-            
-            st_folium(m_silos, height=450, returned_objects=[], use_container_width=True)
+            st_folium(m_silos, height=430, returned_objects=[], use_container_width=True)
         else:
-            if hasattr(px, "scatter_mapbox"):
-                fig_map = px.scatter_mapbox(
-                    elev_data,
-                    lat="lat",
-                    lon="lon",
-                    size="estimated_fill_pct",
-                    color="estimated_fill_pct",
-                    color_continuous_scale=["red", "orange", "green"],
-                    hover_name="name",
-                    zoom=6,
-                    mapbox_style="open-street-map",
-                    height=450,
-                )
-            elif hasattr(px, "scatter_map"):
-                fig_map = px.scatter_map(
-                    elev_data,
-                    lat="lat",
-                    lon="lon",
-                    size="estimated_fill_pct",
-                    color="estimated_fill_pct",
-                    color_continuous_scale=["red", "orange", "green"],
-                    hover_name="name",
-                    zoom=6,
-                    map_style="open-street-map",
-                    height=450,
-                )
-            else:
-                fig_map = px.scatter(
-                    elev_data,
-                    x="lon",
-                    y="lat",
-                    size="estimated_fill_pct",
-                    color="estimated_fill_pct",
-                    hover_name="name",
-                    height=450,
-                )
+            # Fallback: Plotly scatter
+            color_map = {"FULL": "#34C759", "OPTIMAL": "#FF9500", "DEFICIT": "#FF3B30"}
+            df_207["_color"] = df_207["status_code"].map(color_map).fillna("#888")
+            fig_map = px.scatter(
+                df_207, x="lon", y="lat",
+                size="capacity_t", color="status_code",
+                color_discrete_map={"FULL": "#34C759", "OPTIMAL": "#FF9500", "DEFICIT": "#FF3B30"},
+                hover_name="name",
+                hover_data={"current_fill_pct": ":.1f", "capacity_t": ":,"},
+                height=430,
+                title="207 ХПП Зернового пояса"
+            )
             fig_map.update_layout(**PLOTLY_THEME)
             st.plotly_chart(fig_map, width='stretch')
 
     with col_tbl3:
-        st.markdown("### 📊 Элеваторлар мәртебесі" if lang == "kk" else "### 📊 Статус элеваторов")
-        for _, row in elev_data.iterrows():
-            fill_val = row.get("estimated_fill_pct", None)
-            if pd.isna(fill_val) or fill_val is None:
-                fill_val = 0.0
-                fill_str = "Деректер жоқ" if lang == "kk" else "Нет данных"
-            else:
-                fill_val = float(fill_val)
-                fill_str = f"{fill_val:.1f}%"
+        if lang == "kk":
+            st.markdown("#### 📋 ХПП рейтингі (ең жоғары тәуекел)")
+        else:
+            st.markdown("#### 📋 Топ ХПП по риску")
 
-            status_emoji = "🟢" if fill_val > 70 else "🟡" if fill_val > 30 else "🔴"
-            st.markdown(f"**{status_emoji} {row['name']}**")
-            
-            progress_val = min(1.0, max(0.0, fill_val / 100.0))
-            st.progress(progress_val)
-            
-            capacity = row.get("capacity_t", None)
-            if pd.isna(capacity) or capacity is None:
-                capacity_str = "белгісіз сыйымдылық" if lang == "kk" else "неизвестная мощность"
+        # Лидерборд: сначала DEFICIT, потом FULL (переполненные тоже проблема)
+        df_sorted = df_207.sort_values(["current_fill_pct"], ascending=True).head(12)
+        for _, row in df_sorted.iterrows():
+            fill_val = float(row["current_fill_pct"])
+            status_lbl = str(row.get("status_label", ""))
+            rail_icon = "🚂" if row.get("railway_access") else "🚛"
+            cap_t = int(row.get("capacity_t", 0))
+            free_t = int(row.get("free_capacity_t", 0))
+
+            st.markdown(f"**{status_lbl[:2]} {row['name']}** {rail_icon}")
+            st.progress(min(1.0, max(0.0, fill_val / 100.0)))
+            if lang == "kk":
+                st.caption(f"{fill_val:.0f}% толымды · {cap_t:,} т сыйымдылық · {free_t:,} т бос")
             else:
-                capacity_str = f"{int(capacity):,} т сыйымдылық" if lang == "kk" else f"{int(capacity):,} т мощность"
-                
-            fill_caption = f"{fill_str} толы · {capacity_str}" if lang == "kk" else f"{fill_str} заполнен · {capacity_str}"
-            st.caption(fill_caption)
-            st.divider()
+                st.caption(f"{fill_val:.0f}% загружен · {cap_t:,} т вместимость · {free_t:,} т свободно")
+
+    st.divider()
+
+    # ═══ НИЖНИЙ БЛОК: Rerouting (5.2) + Price Chain (5.3) ═══════════════
+    col_rr, col_pc = st.columns(2)
+
+    # ─── Step 5.2: Rerouting ─────────────────────────────────────────────
+    with col_rr:
+        if lang == "kk":
+            st.markdown("#### 🔀 Астық ағынын қайта бағыттау (Step 5.2)")
+            st.markdown(
+                "Дефицит немесе өте жоғары толымдылық анықталған жағдайда жүйе "
+                "NetworkX (Дейкстра алгоритмі) арқылы **баламалы ХПП-ға оңтайлы маршрутты** "
+                "автоматты түрде есептейді."
+            )
+        else:
+            st.markdown("#### 🔀 Перенаправление зернопотоков (Step 5.2)")
+            st.markdown(
+                "При обнаружении дефицитного или переполненного ХПП система автоматически "
+                "рассчитывает **оптимальный маршрут переброски зерна** (алгоритм Дейкстры, NetworkX)."
+            )
+
+        # Выбор исходного ХПП
+        deficit_silos = df_207[df_207["status_code"] == "DEFICIT"]
+        if deficit_silos.empty:
+            deficit_silos = df_207.head(5)
+
+        rr_options = deficit_silos["name"].tolist()
+        rr_sel = st.selectbox(
+            "🔴 " + ("Шығу ХПП (тапшылық)" if lang == "kk" else "Исходный ХПП (дефицит)"),
+            options=rr_options,
+            key="rr_source"
+        )
+        rr_volume = st.slider(
+            "📦 " + ("Тасымалданатын астық, тыс. т" if lang == "kk" else "Объём переброски, тыс. т"),
+            min_value=5, max_value=100, value=25, step=5, key="rr_volume"
+        ) * 1000
+
+        if st.button("🚂 " + ("Оңтайлы маршрутты есептеу" if lang == "kk" else "Рассчитать маршрут"), key="btn_reroute"):
+            with st.spinner("NetworkX…"):
+                try:
+                    router = _build_router()
+                    source_id_sel = deficit_silos[deficit_silos["name"] == rr_sel]["id"].values[0]
+                    rr_result = router.solve_rerouting(
+                        source_id=source_id_sel,
+                        volume_tons=rr_volume,
+                        df_current_loads=df_207
+                    )
+                    st.session_state["rr_result"] = rr_result
+                except Exception as e:
+                    st.error(f"Маршруттау қатесі: {e}" if lang == "kk" else f"Ошибка маршрутизации: {e}")
+
+        if "rr_result" in st.session_state:
+            rr = st.session_state["rr_result"]
+            st.success(
+                f"✅ **{rr['source_name']}** → **{rr['target_name']}**"
+            )
+            r1, r2 = st.columns(2)
+            with r1:
+                st.metric("📏 " + ("Қашықтық" if lang == "kk" else "Расстояние"), f"{rr['distance_km']:.0f} км")
+                st.metric("🚂 " + ("Вагон (ҚТЖ)" if lang == "kk" else "Вагоны КТЖ"), f"{rr['wagons_required']} шт.")
+                st.metric("🚛 " + ("Автозерновоз" if lang == "kk" else "Автозерновозы"), f"{rr['trucks_required']} шт.")
+            with r2:
+                st.metric("💰 " + ("ҚТЖ тарифі" if lang == "kk" else "Тариф КТЖ"),
+                          f"{rr['cost_rail_kzt']/1e6:.1f} млн ₸",
+                          f"-{rr['savings_usd']:,.0f} USD " + ("үнемдеу" if lang == "kk" else "экономия"))
+                st.metric("🌿 CO₂ " + ("үнемдеу" if lang == "kk" else "экономия"),
+                          f"{rr['co2_saved_t']:.1f} т CO₂")
+            if FOLIUM_AVAILABLE:
+                m_rr = folium.Map(
+                    location=rr["source_coords"],
+                    zoom_start=6,
+                    tiles=TACTICAL_MAP_TILES,
+                    attr=TACTICAL_MAP_ATTR,
+                )
+                folium.Marker(rr["source_coords"], popup=rr["source_name"],
+                              icon=folium.Icon(color="red", icon="home")).add_to(m_rr)
+                folium.Marker(rr["target_coords"], popup=rr["target_name"],
+                              icon=folium.Icon(color="green", icon="ok-sign")).add_to(m_rr)
+                folium.PolyLine(
+                    rr["path_coords"], color="#00E5FF",
+                    weight=4, opacity=0.9, tooltip=f"{rr['distance_km']:.0f} км"
+                ).add_to(m_rr)
+                st_folium(m_rr, height=280, returned_objects=[], use_container_width=True)
+
+    # ─── Step 5.3: Price Transmission Chain ──────────────────────────────
+    with col_pc:
+        if lang == "kk":
+            st.markdown("#### 💸 Баға берілу тізбегі (Step 5.3)")
+            st.markdown(
+                "**Granger Pass-Through** эластичтілік коэффициенттері негізінде: "
+                "Өнімділіктің құлдырауы → Бидай → Ұн → Нан."
+            )
+        else:
+            st.markdown("#### 💸 Цепочка передачи цен (Step 5.3)")
+            st.markdown(
+                "На основе коэффициентов эластичности **Granger Pass-Through**: "
+                "падение урожайности → пшеница → мука → хлеб."
+            )
+
+        pc_shock = st.slider(
+            "📉 " + ("Өнімділіктің болжамды құлдырауы, %" if lang == "kk" else "Прогнозный шок урожайности, %"),
+            min_value=-50, max_value=0,
+            value=int(-shock_factor * 100) if shock_ili_smai < 0 else 0,
+            step=5, key="pc_shock"
+        )
+
+        pc = calculate_price_transmission_chain(yield_shock_pct=float(pc_shock))
+
+        # Уровень риска
+        tier_color = {"HIGH": "🔴", "MEDIUM": "🟡", "LOW": "🟢"}[pc["risk_tier"]]
+        st.markdown(
+            f"{tier_color} **CPI Pressure Score: {pc['cpi_pressure_score']:.0f}/100** "
+            f"— {'HIGH' if lang != 'kk' else 'ЖОҒАРЫ'}" if pc["risk_tier"] == "HIGH" else
+            (f"{tier_color} **CPI Pressure Score: {pc['cpi_pressure_score']:.0f}/100** "
+             f"— {'MEDIUM' if lang != 'kk' else 'ОРТАША'}" if pc["risk_tier"] == "MEDIUM" else
+             f"{tier_color} **CPI Pressure Score: {pc['cpi_pressure_score']:.0f}/100** "
+             f"— {'LOW' if lang != 'kk' else 'ТӨМЕН'}")
+        )
+
+        # Метрики цен
+        p1, p2, p3 = st.columns(3)
+        with p1:
+            st.metric(
+                "🌾 " + ("Бидай" if lang == "kk" else "Пшеница"),
+                f"{pc['wheat_price_projected']:,.0f} ₸/т",
+                f"+{pc['wheat_jump_pct']:.1f}%" if pc_shock < 0 else "0%",
+                delta_color="inverse"
+            )
+        with p2:
+            st.metric(
+                "🏭 " + ("Ұн" if lang == "kk" else "Мука"),
+                f"{pc['flour_price_projected']:.0f} ₸/кг",
+                f"+{pc['flour_jump_pct']:.1f}%" if pc_shock < 0 else "0%",
+                delta_color="inverse"
+            )
+        with p3:
+            st.metric(
+                "🍞 " + ("Нан" if lang == "kk" else "Хлеб"),
+                f"{pc['bread_price_projected']:.0f} ₸/" + ("дана" if lang == "kk" else "бул."),
+                f"+{pc['bread_jump_pct']:.1f}%" if pc_shock < 0 else "0%",
+                delta_color="inverse"
+            )
+
+        # График временной траектории цен
+        fig_pc = go.Figure()
+        fig_pc.add_trace(go.Scatter(
+            x=pc["timeline_days"], y=pc["wheat_curve"],
+            name="🌾 " + ("Бидай (₸/т÷1000)" if lang == "kk" else "Пшеница (₸/т÷1000)"),
+            line=dict(color="#00E5FF", width=2.5, shape="spline"),
+            mode="lines",
+        ))
+        fig_pc.add_trace(go.Scatter(
+            x=pc["timeline_days"], y=[v * 1000 for v in pc["flour_curve"]],
+            name="🏭 " + ("Ұн (₸/кг×1000)" if lang == "kk" else "Мука (₸/кг×1000)"),
+            line=dict(color="#FFB300", width=2, dash="dot", shape="spline"),
+            mode="lines",
+        ))
+        fig_pc.add_trace(go.Scatter(
+            x=pc["timeline_days"], y=[v * 1000 for v in pc["bread_curve"]],
+            name="🍞 " + ("Нан (₸/дана×1000)" if lang == "kk" else "Хлеб (₸/бул.×1000)"),
+            line=dict(color="#FF3D71", width=2, dash="dash", shape="spline"),
+            mode="lines",
+        ))
+        fig_pc.update_layout(
+            **PLOTLY_THEME,
+            height=250,
+            margin=dict(t=10, l=0, r=0, b=30),
+            xaxis_title="Күн / День",
+            yaxis_title="₸ (масштабталған / нормир.)",
+            legend=dict(orientation="h", y=-0.4, font=dict(size=10)),
+        )
+        st.plotly_chart(fig_pc, width='stretch')
+
+        # Рекомендация акимату
+        with st.expander("📋 " + ("Акиматқа ұсыным" if lang == "kk" else "Рекомендация для акимата")):
+            st.markdown(
+                pc["recommendation_kk"] if lang == "kk" else pc["recommendation_ru"]
+            )
 
 
 # ══════════════════════════════════════════════
@@ -1817,7 +2381,12 @@ with tab5:
     st.divider()
 
     if df_vuln is not None and not df_vuln.empty and FOLIUM_AVAILABLE:
-        m_vuln = folium.Map(location=[53.8, 68.0], zoom_start=7, tiles="OpenStreetMap")
+        m_vuln = folium.Map(
+            location=[53.8, 68.0],
+            zoom_start=7,
+            tiles=TACTICAL_MAP_TILES,
+            attr=TACTICAL_MAP_ATTR,
+        )
 
         for _, row in df_vuln.iterrows():
             color = row.get("map_color", "#888888")
@@ -1990,23 +2559,23 @@ with tab6:
             y=psi_2021,
             mode='lines+markers',
             name='PhenoShift Index (2021)',
-            line=dict(color='#FF3B30', width=3),
-            marker=dict(size=8, color='#FF3B30'),
+            line=dict(color='#FF3D71', width=3, shape="spline"),
+            marker=dict(size=7, color='#FF3D71'),
         ))
         
         crit_threshold_lbl = "Критикалық шек" if lang == "kk" else "Критический порог"
-        fig_bt.add_hline(y=-1.5, line_dash="dash", line_color="#FF9500", annotation_text=crit_threshold_lbl)
+        fig_bt.add_hline(y=-1.5, line_dash="dash", line_color="#FFB300", annotation_text=crit_threshold_lbl)
         fig_bt.add_hline(y=0, line_color="rgba(255,255,255,0.2)")
         
         fig_bt.add_vline(
-            x="2021-06-18", line_width=2, line_dash="dash", line_color="#40c4ff",
+            x="2021-06-18", line_width=2, line_dash="dash", line_color="#00E5FF",
         )
         alarm_text = "AgriCascade: Дабыл сигналы<br>(18 маусым)" if lang == "kk" else "AgriCascade: Сигнал тревоги<br>(18 июня)"
         fig_bt.add_annotation(
             x="2021-06-18", y=-1.5,
             text=alarm_text,
             showarrow=True, arrowhead=1, ax=-40, ay=-40,
-            font=dict(color="#40c4ff", size=12)
+            font=dict(color="#00E5FF", size=12)
         )
         
         fig_bt.add_vline(
@@ -2022,7 +2591,7 @@ with tab6:
         
         fig_bt.add_vrect(
             x0="2021-06-18", x1="2021-07-15",
-            fillcolor="rgba(64,196,255,0.1)", layer="below", line_width=0,
+            fillcolor="rgba(0,229,255,0.12)", layer="below", line_width=0,
         )
         
         bt_title = (
@@ -2092,6 +2661,8 @@ with col_rep1:
             df_vuln_arg=df_vuln,
             df_econ_arg=df_econ,
             lang=lang,
+            crop=crop_name,
+            crop_kc=crop_kc,
         )
         fname_xlsx = f"AgriCascade_{selected_year}_{selected_region[:3]}_Report.xlsx"
         st.download_button(
@@ -2118,16 +2689,21 @@ with col_rep2:
         high_risk=high_risk_count,
         moderate_risk=moderate_risk_count,
         lang=lang,
+        crop=crop_name,
+        crop_kc=crop_kc,
+        region_key=selected_region_key,
+        crop_key=selected_crop_key,
+        shock_factor=shock_factor if shock_ili_smai < 0 else 0.0,
     )
-    fname_md = f"AgriCascade_{selected_year}_{selected_region[:3]}_Note.md"
+    fname_md = f"AgriCascade_{selected_year}_{selected_region_key}_Executive_Audit.md"
     st.download_button(
-        label="📄 Аналитикалық жазба (.md)" if lang == "kk" else "📄 Аналитическая записка (.md)",
+        label="📥 Экспресс-аудит (.md)" if lang == "kk" else "📥 Экспресс-аудит региона (.md)",
         data=md_text.encode("utf-8"),
         file_name=fname_md,
         mime="text/markdown",
         use_container_width=True,
         key="footer_btn_md",
-        help="Markdown-жазба: Word, Obsidian, GitHub, Notion-да ашылады" if lang == "kk" else "Markdown-записка: открывается в Word, Obsidian, GitHub, Notion",
+        help="Әкімдік пен АШМ үшін толық талдамалық анықтама" if lang == "kk" else "Полная аналитическая записка для руководства акимата и МСХ",
     )
 
 

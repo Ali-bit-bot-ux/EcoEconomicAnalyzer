@@ -61,6 +61,25 @@
         "main_crop": "wheat",
         "drought_risk": "MEDIUM"
       }
+    },
+
+    "pavlodar_wheat": {
+      "name": "Павлодарская область — Зерновой и масличный пояс",
+      "description": "Четвертый ключевой регион зернового пояса Казахстана. Бассейн р. Иртыш. ~1.4 млн га пашни.",
+      "country": "Kazakhstan",
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [74.0, 50.5], [78.5, 50.5], [78.5, 54.0], [74.0, 54.0], [74.0, 50.5]
+        ]]
+      },
+      "properties": {
+        "area_ha": 1400000,
+        "main_crop": "wheat",
+        "climate_zone": "dry_steppe",
+        "drought_risk": "HIGH"
+      }
     }
   },
 
