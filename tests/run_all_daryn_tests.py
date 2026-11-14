@@ -2,7 +2,7 @@
 AgriCascade — tests/run_all_daryn_tests.py
 ==========================================
 Мастер-раннер приемочных тестов для финала конкурса «Дарын».
-Запускает все верификационные тесты Phase 3, Phase 4, Phase 5 и Phase 6.
+Запускает верификационные тесты Phase 3–7.
 """
 
 import unittest
@@ -13,6 +13,10 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+for stream in (sys.stdout, sys.stderr):
+    if hasattr(stream, "reconfigure"):
+        stream.reconfigure(encoding="utf-8")
+
 from tests.test_multiregion_multicrop import TestMultiRegionMultiCrop
 from tests.test_gis_choropleth import TestGISChoropleth
 from tests.test_step5_1_elevators import TestElevatorLogisticsClustering
@@ -21,6 +25,9 @@ from tests.test_step5_3_price_chain import TestPriceTransmissionChain
 from tests.test_step6_1_bilingual import TestStep61Bilingual
 from tests.test_step6_2_executive_audit import TestExecutiveAudit
 from tests.test_step6_3_soak import TestStep63SoakStability
+from tests.test_phase7_space_segment import TestPhase7SpaceSegment
+from tests.test_phase7_offline_cache import TestPhase7OfflineCache
+from tests.test_real_2026_data import TestReal2026Data
 
 
 def run_full_verification_suite():
@@ -41,6 +48,9 @@ def run_full_verification_suite():
     suite.addTests(loader.loadTestsFromTestCase(TestStep61Bilingual))
     suite.addTests(loader.loadTestsFromTestCase(TestExecutiveAudit))
     suite.addTests(loader.loadTestsFromTestCase(TestStep63SoakStability))
+    suite.addTests(loader.loadTestsFromTestCase(TestPhase7SpaceSegment))
+    suite.addTests(loader.loadTestsFromTestCase(TestPhase7OfflineCache))
+    suite.addTests(loader.loadTestsFromTestCase(TestReal2026Data))
 
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)

@@ -325,11 +325,11 @@ def compute_district_choropleth_geojson(
     crop_sensitivity = (crop_kc / 1.10) * (4.2 / max(crop_tolerance, 1.0))
     
     features = []
-    rng = np.random.default_rng(abs(hash(region_id)) % 10000)
 
-    for i, d in enumerate(districts):
-        # Микрозональная вариация PSI для конкретного района
-        d_psi = current_psi - (crop_kc - 1.0) * 0.35 + float(rng.normal(0, 0.22))
+    for d in districts:
+        # Детерминированная микрозональная поправка по влагоемкости почвы района.
+        awc_adjustment = ((145.0 - d["base_awc_mm"]) / 100.0) * 0.35
+        d_psi = current_psi - (crop_kc - 1.0) * 0.35 - awc_adjustment
         d_psi -= (shock_factor * 5.0 * crop_sensitivity)
         
         # Расчет индекса риска R: 0 (идеально) -> 100 (полная катастрофа)

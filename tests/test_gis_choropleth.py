@@ -58,6 +58,19 @@ class TestGISChoropleth(unittest.TestCase):
                     self.assertIn("📍", props["tooltip_html"])
                     self.assertTrue(15 <= props["available_moisture_pct"] <= 95)
 
+    def test_district_layer_is_deterministic_and_soil_driven(self):
+        """Одинаковые входы дают одинаковый GeoJSON; вариация районов идёт от AWC, не от random."""
+        kwargs = dict(region_id="sko", lang="ru", current_psi=-0.4, crop_kc=1.15,
+                      crop_tolerance=3.5, crop_name="Пшеница яровая", shock_factor=0.0)
+        first = compute_district_choropleth_geojson(**kwargs)
+        second = compute_district_choropleth_geojson(**kwargs)
+        self.assertEqual(first, second)
+        psi_values = {feature["properties"]["id"]: feature["properties"]["psi"] for feature in first["features"]}
+        self.assertGreater(len(set(psi_values.values())), 1)
+        awc = {d["id"]: d["base_awc_mm"] for d in DISTRICT_REGISTRY["sko"]}
+        worst = min(psi_values, key=psi_values.get)
+        self.assertEqual(worst, min(awc, key=awc.get))
+
     def test_what_if_stress_reactivity(self):
         """Проверка реактивного перекрашивания районов при стресс-тесте."""
         # 1. Базовый сценарий (без шока)

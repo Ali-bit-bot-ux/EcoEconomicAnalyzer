@@ -10,6 +10,7 @@ Singleton-клиент Google Earth Engine.
 import ee
 import json
 import hashlib
+import math
 import pickle
 from pathlib import Path
 from loguru import logger
@@ -33,10 +34,7 @@ class GEEClient:
         return cls._instance
 
     def initialize(self) -> bool:
-        """
-        Инициализирует Earth Engine API.
-        Вызывается один раз при старте пайплайна.
-        """
+        """Initialize explicitly with existing credentials; return connection status."""
         if self._initialized:
             return True
 
@@ -51,21 +49,16 @@ class GEEClient:
                     ee.Initialize()
                     logger.info("GEE инициализирован")
                 except ee.EEException as ex:
-                    # Попытка 3: Если GEE требует проект, берем дефолтный или 'ee-daryn'
-                    err_msg = str(ex)
-                    if "no project found" in err_msg or "project=" in err_msg:
-                        try:
-                            # Пробуем дефолтный Cloud проект
-                            import google.auth
-                            credentials, project = google.auth.default()
-                            project_id = project or "ee-daryn"
-                            ee.Initialize(project=project_id)
-                            logger.info(f"GEE инициализирован с авто-проектом: {project_id}")
-                        except Exception:
-                            # Если Cloud Project недоступен, инициализируем базовый Legacy API (если аккаунт старый)
-                            logger.warning("Cloud Project не найден. Пробуем базовую инициализацию...")
-                            ee.Initialize() 
+                    # Только отсутствие проекта допускает поиск существующего ADC.
+                    err_msg = str(ex).lower()
+                    if "no project found" not in err_msg and "project=" not in err_msg:
+                        raise
+                    import google.auth
+                    credentials, project = google.auth.default()
+                    if not project:
                         raise ex
+                    ee.Initialize(credentials=credentials, project=project)
+                    logger.info(f"GEE инициализирован с авто-проектом: {project}")
 
             self._initialized = True
             return True
@@ -219,6 +212,161 @@ class GEEClient:
             .filter(ee.Filter.eq('instrumentMode', 'IW'))
             .select(['VV', 'VH'])
         )
+
+    def get_space_observations(
+        self,
+        polygon_coords: list | dict,
+        start_date: str,
+        end_date: str,
+        orbit_pass: str = "DESCENDING",
+        relative_orbit: Optional[int] = None,
+        scale: int = 100,
+    ) -> dict:
+        """Pair SAR powers on a common mask and orbit; retain independent optical acquisition times."""
+        if orbit_pass not in ("ASCENDING", "DESCENDING"):
+            raise ValueError("orbit_pass must be ASCENDING or DESCENDING")
+        if relative_orbit is not None and (
+            isinstance(relative_orbit, bool)
+            or not isinstance(relative_orbit, int)
+            or not 1 <= relative_orbit <= 175
+        ):
+            raise ValueError("relative_orbit must be an integer from 1 to 175 or None")
+        if (
+            isinstance(scale, bool)
+            or not isinstance(scale, (int, float))
+            or not math.isfinite(scale)
+            or scale <= 0
+        ):
+            raise ValueError("scale must be a finite positive number of metres")
+        if isinstance(polygon_coords, dict):
+            if polygon_coords.get("type") != "Polygon":
+                raise ValueError("ROI must be a GeoJSON Polygon geometry")
+            polygon_coords = polygon_coords["coordinates"]
+
+        if not self.initialize():
+            raise RuntimeError("Earth Engine initialization is unavailable.")
+        geometry = self.polygon_from_coords(polygon_coords)
+        sar_collection = (
+            ee.ImageCollection("COPERNICUS/S1_GRD")
+            .filterBounds(geometry)
+            .filterDate(start_date, end_date)
+            .filter(ee.Filter.eq("instrumentMode", "IW"))
+            .filter(ee.Filter.listContains("transmitterReceiverPolarisation", "VV"))
+            .filter(ee.Filter.listContains("transmitterReceiverPolarisation", "VH"))
+            .filter(ee.Filter.eq("orbitProperties_pass", orbit_pass))
+            .select(["VV", "VH", "angle"])
+        )
+        if relative_orbit is None:
+            histogram = sar_collection.aggregate_histogram(
+                "relativeOrbitNumber_start"
+            ).getInfo()
+            if histogram:
+                chosen = max(
+                    histogram,
+                    key=lambda orbit: (histogram[orbit], -int(float(orbit))),
+                )
+                relative_orbit = int(float(chosen))
+
+        def reduce_sar(image):
+            common_mask = image.select(["VV", "VH", "angle"]).mask().reduce(
+                ee.Reducer.min()
+            )
+            paired_db = image.select(["VV", "VH"]).updateMask(common_mask)
+            # exp(dB * ln(10) / 10) = 10**(dB/10), preserving the VV/VH grid.
+            powers = paired_db.multiply(math.log(10) / 10).exp()
+            values = powers.addBands(image.select("angle").updateMask(common_mask))
+            stats = values.reduceRegion(
+                reducer=ee.Reducer.mean(),
+                geometry=geometry,
+                scale=scale,
+                crs=image.select("VV").projection(),
+                maxPixels=1e9,
+                tileScale=16,
+            )
+            return ee.Feature(None, {
+                "date": image.date().format("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", "UTC"),
+                "scene_id": image.get("system:index"),
+                "orbit_pass": image.get("orbitProperties_pass"),
+                "relative_orbit": image.get("relativeOrbitNumber_start"),
+                "incidence_angle_deg": stats.get("angle"),
+                "vv_power": stats.get("VV"),
+                "vh_power": stats.get("VH"),
+            })
+
+        sar = []
+        if relative_orbit is not None:
+            sar_collection = sar_collection.filter(
+                ee.Filter.eq("relativeOrbitNumber_start", relative_orbit)
+            ).sort("system:time_start")
+            features = ee.FeatureCollection(sar_collection.map(reduce_sar)).getInfo()
+            for feature in features["features"]:
+                props = feature["properties"]
+                required = (
+                    "date", "scene_id", "orbit_pass", "relative_orbit",
+                    "incidence_angle_deg", "vv_power", "vh_power",
+                )
+                if any(props.get(key) is None for key in required):
+                    continue
+                vv_power = float(props["vv_power"])
+                vh_power = float(props["vh_power"])
+                angle = float(props["incidence_angle_deg"])
+                if not all(math.isfinite(v) for v in (vv_power, vh_power, angle)):
+                    continue
+                if vv_power <= 0 or vh_power <= 0 or not 0 <= angle <= 90:
+                    continue
+                sar.append({
+                    "date": props["date"],
+                    "scene_id": props["scene_id"],
+                    "orbit_pass": props["orbit_pass"],
+                    "relative_orbit": int(props["relative_orbit"]),
+                    "incidence_angle_deg": angle,
+                    "vv_db": 10 * math.log10(vv_power),
+                    "vh_db": 10 * math.log10(vh_power),
+                    "source": "COPERNICUS/S1_GRD",
+                })
+
+        optical_collection = self.get_sentinel2(
+            geometry, start_date, end_date, apply_cloud_mask=True
+        ).map(self.add_ndvi_s2).sort("system:time_start")
+
+        def reduce_optical(image):
+            stats = image.select("NDVI").reduceRegion(
+                reducer=ee.Reducer.mean(),
+                geometry=geometry,
+                scale=scale,
+                crs=image.select("B8").projection(),
+                maxPixels=1e9,
+                tileScale=16,
+            )
+            return ee.Feature(None, {
+                "date": image.date().format("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", "UTC"),
+                "scene_id": image.get("system:index"),
+                "ndvi": stats.get("NDVI"),
+            })
+
+        optical = []
+        features = ee.FeatureCollection(optical_collection.map(reduce_optical)).getInfo()
+        for feature in features["features"]:
+            props = feature["properties"]
+            if any(props.get(key) is None for key in ("date", "scene_id", "ndvi")):
+                continue
+            ndvi = float(props["ndvi"])
+            if math.isfinite(ndvi) and -1 <= ndvi <= 1:
+                optical.append({
+                    "date": props["date"],
+                    "scene_id": props["scene_id"],
+                    "ndvi": ndvi,
+                    "source": "COPERNICUS/S2_SR_HARMONIZED",
+                })
+
+        sar.sort(key=lambda row: (row["date"], row["scene_id"]))
+        optical.sort(key=lambda row: (row["date"], row["scene_id"]))
+        return {
+            "sar": sar,
+            "optical": optical,
+            "relative_orbit": relative_orbit,
+            "scale_m": scale,
+        }
 
     # ─────────────────────────────────────────────
     # Внутренние функции обработки снимков

@@ -19,6 +19,7 @@ data/raw/
 logs/
 
 # Python
+/Python/
 __pycache__/
 *.pyc
 *.pyo

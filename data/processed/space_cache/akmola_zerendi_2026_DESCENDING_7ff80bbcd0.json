@@ -1,0 +1,185 @@
+{
+  "schema_version": "agricascade.space-cache/1",
+  "cached_at": "2026-11-13T11:57:00.039948+00:00",
+  "query": {
+    "region_id": "akmola",
+    "district_id": "zerendi",
+    "year": 2026,
+    "orbit_pass": "DESCENDING",
+    "start_date": "2026-04-01",
+    "end_date": "2026-10-01",
+    "aoi_sha256": "b5231d8f7690568b0884d835ff2fb57e0809f33e1be19eab066dc663c7b3ccd4"
+  },
+  "observations": {
+    "sar": [
+      {
+        "date": "2026-04-03T01:33:56.318327Z",
+        "scene_id": "S1C_IW_GRDH_1SDV_20260403T013343_20260403T013408_007045_00E435_rtc",
+        "vv_db": -12.3648026095481,
+        "vh_db": -20.101779408741983,
+        "orbit_pass": "DESCENDING",
+        "relative_orbit": 49,
+        "incidence_angle_deg": 38.068464,
+        "source": "COPERNICUS/S1_GRD RTC (Microsoft Planetary Computer)"
+      },
+      {
+        "date": "2026-04-15T01:33:43.605374Z",
+        "scene_id": "S1C_IW_GRDH_1SDV_20260415T013325_20260415T013401_007220_00EA19_rtc",
+        "vv_db": -13.48668269892822,
+        "vh_db": -21.268456333624695,
+        "orbit_pass": "DESCENDING",
+        "relative_orbit": 49,
+        "incidence_angle_deg": 38.093983,
+        "source": "COPERNICUS/S1_GRD RTC (Microsoft Planetary Computer)"
+      },
+      {
+        "date": "2026-04-27T01:33:57.536143Z",
+        "scene_id": "S1C_IW_GRDH_1SDV_20260427T013345_20260427T013410_007395_00F007_rtc",
+        "vv_db": -10.801742095947006,
+        "vh_db": -18.591014837296676,
+        "orbit_pass": "DESCENDING",
+        "relative_orbit": 49,
+        "incidence_angle_deg": 38.068142,
+        "source": "COPERNICUS/S1_GRD RTC (Microsoft Planetary Computer)"
+      },
+      {
+        "date": "2026-05-09T01:33:58.364661Z",
+        "scene_id": "S1C_IW_GRDH_1SDV_20260509T013345_20260509T013410_007570_00F5EF_rtc",
+        "vv_db": -10.239855581142649,
+        "vh_db": -17.318001365404346,
+        "orbit_pass": "DESCENDING",
+        "relative_orbit": 49,
+        "incidence_angle_deg": 38.06789,
+        "source": "COPERNICUS/S1_GRD RTC (Microsoft Planetary Computer)"
+      },
+      {
+        "date": "2026-05-21T01:33:59.198251Z",
+        "scene_id": "S1C_IW_GRDH_1SDV_20260521T013346_20260521T013411_007745_00FBD5_rtc",
+        "vv_db": -10.709285428346437,
+        "vh_db": -18.147470214768322,
+        "orbit_pass": "DESCENDING",
+        "relative_orbit": 49,
+        "incidence_angle_deg": 38.0691465,
+        "source": "COPERNICUS/S1_GRD RTC (Microsoft Planetary Computer)"
+      },
+      {
+        "date": "2026-05-22T01:34:09.059103Z",
+        "scene_id": "S1D_IW_GRDH_1SDV_20260522T013356_20260522T013421_002890_004EEE_rtc",
+        "vv_db": -12.51965555087202,
+        "vh_db": -19.814504531842193,
+        "orbit_pass": "DESCENDING",
+        "relative_orbit": 49,
+        "incidence_angle_deg": 38.068801,
+        "source": "COPERNICUS/S1_GRD RTC (Microsoft Planetary Computer)"
+      },
+      {
+        "date": "2026-06-02T01:33:59.701544Z",
+        "scene_id": "S1C_IW_GRDH_1SDV_20260602T013347_20260602T013412_007920_0101AD_rtc",
+        "vv_db": -10.119180316251928,
+        "vh_db": -17.162168316368604,
+        "orbit_pass": "DESCENDING",
+        "relative_orbit": 49,
+        "incidence_angle_deg": 38.0680015,
+        "source": "COPERNICUS/S1_GRD RTC (Microsoft Planetary Computer)"
+      },
+      {
+        "date": "2026-06-03T01:34:09.612613Z",
+        "scene_id": "S1D_IW_GRDH_1SDV_20260603T013357_20260603T013422_003065_0054B7_rtc",
+        "vv_db": -12.345256404179747,
+        "vh_db": -19.190753915317796,
+        "orbit_pass": "DESCENDING",
+        "relative_orbit": 49,
+        "incidence_angle_deg": 38.066916500000005,
+        "source": "COPERNICUS/S1_GRD RTC (Microsoft Planetary Computer)"
+      },
+      {
+        "date": "2026-06-15T01:34:10.597164Z",
+        "scene_id": "S1D_IW_GRDH_1SDV_20260615T013358_20260615T013423_003240_005A82_rtc",
+        "vv_db": -10.513546131264436,
+        "vh_db": -17.358677166526725,
+        "orbit_pass": "DESCENDING",
+        "relative_orbit": 49,
+        "incidence_angle_deg": 38.067976,
+        "source": "COPERNICUS/S1_GRD RTC (Microsoft Planetary Computer)"
+      },
+      {
+        "date": "2026-07-03T01:33:58.626669Z",
+        "scene_id": "S1C_IW_GRDH_1SDV_20260703T013346_20260703T013411_008372_010912_rtc",
+        "vv_db": -9.97123681313533,
+        "vh_db": -16.03451864196059,
+        "orbit_pass": "DESCENDING",
+        "relative_orbit": 49,
+        "incidence_angle_deg": 38.067418,
+        "source": "COPERNICUS/S1_GRD RTC (Microsoft Planetary Computer)"
+      },
+      {
+        "date": "2026-07-15T01:33:59.373223Z",
+        "scene_id": "S1C_IW_GRDH_1SDV_20260715T013346_20260715T013411_008547_010EBB_rtc",
+        "vv_db": -11.506594990331106,
+        "vh_db": -17.76585519512387,
+        "orbit_pass": "DESCENDING",
+        "relative_orbit": 49,
+        "incidence_angle_deg": 38.067767,
+        "source": "COPERNICUS/S1_GRD RTC (Microsoft Planetary Computer)"
+      },
+      {
+        "date": "2026-08-08T01:34:00.548880Z",
+        "scene_id": "S1C_IW_GRDH_1SDV_20260808T013348_20260808T013413_008897_011A5D_rtc",
+        "vv_db": -12.474488085439043,
+        "vh_db": -18.94211452824401,
+        "orbit_pass": "DESCENDING",
+        "relative_orbit": 49,
+        "incidence_angle_deg": 38.067384000000004,
+        "source": "COPERNICUS/S1_GRD RTC (Microsoft Planetary Computer)"
+      },
+      {
+        "date": "2026-08-20T01:34:01.413437Z",
+        "scene_id": "S1C_IW_GRDH_1SDV_20260820T013348_20260820T013413_009072_012020_rtc",
+        "vv_db": -11.971778054958321,
+        "vh_db": -18.329275024193613,
+        "orbit_pass": "DESCENDING",
+        "relative_orbit": 49,
+        "incidence_angle_deg": 38.067251,
+        "source": "COPERNICUS/S1_GRD RTC (Microsoft Planetary Computer)"
+      },
+      {
+        "date": "2026-09-01T01:34:01.855289Z",
+        "scene_id": "S1C_IW_GRDH_1SDV_20260901T013349_20260901T013414_009247_0125FB_rtc",
+        "vv_db": -13.398846505806778,
+        "vh_db": -20.054379677560533,
+        "orbit_pass": "DESCENDING",
+        "relative_orbit": 49,
+        "incidence_angle_deg": 38.067917,
+        "source": "COPERNICUS/S1_GRD RTC (Microsoft Planetary Computer)"
+      },
+      {
+        "date": "2026-09-13T01:34:02.235107Z",
+        "scene_id": "S1C_IW_GRDH_1SDV_20260913T013349_20260913T013414_009422_012BD6_rtc",
+        "vv_db": -11.1734873647093,
+        "vh_db": -17.420578966036153,
+        "orbit_pass": "DESCENDING",
+        "relative_orbit": 49,
+        "incidence_angle_deg": 38.067414,
+        "source": "COPERNICUS/S1_GRD RTC (Microsoft Planetary Computer)"
+      },
+      {
+        "date": "2026-09-25T01:34:02.575700Z",
+        "scene_id": "S1C_IW_GRDH_1SDV_20260925T013350_20260925T013415_009597_013194_rtc",
+        "vv_db": -12.445730429105442,
+        "vh_db": -19.244939326857224,
+        "orbit_pass": "DESCENDING",
+        "relative_orbit": 49,
+        "incidence_angle_deg": 38.0671065,
+        "source": "COPERNICUS/S1_GRD RTC (Microsoft Planetary Computer)"
+      }
+    ],
+    "optical": [],
+    "relative_orbit": 49,
+    "scale_m": 256
+  },
+  "provenance": {
+    "provider": "Copernicus Sentinel-1 RTC · Microsoft Planetary Computer",
+    "sar": "COPERNICUS/S1_GRD RTC (Microsoft Planetary Computer)",
+    "optical": "none"
+  }
+}

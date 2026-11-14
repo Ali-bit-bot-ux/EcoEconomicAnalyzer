@@ -67,6 +67,7 @@ from modules.elevator_logistics import (
     BASE_BREAD_PRICE_KZT_LOAF,
 )
 from modules.executive_audit import generate_executive_audit_markdown
+from dashboard.space_segment_tab import render_space_segment_tab
 
 @st.cache_resource
 def _build_router() -> GrainLogisticsRouter:
@@ -407,10 +408,17 @@ def load_data():
         "phenoshift": PROCESSED_DIR / "phenoshift.parquet",
         "phenological_norm": PROCESSED_DIR / "phenological_norm.parquet",
         "ndvi_current": PROCESSED_DIR / f"ndvi_current_{CURRENT_YEAR}.parquet",
+        "ndvi_baseline_regions": PROCESSED_DIR / "ndvi_baseline_regions.parquet",
+        "phenological_norm_regions": PROCESSED_DIR / "phenological_norm_regions.parquet",
+        "phenoshift_regions": PROCESSED_DIR / "phenoshift_regions.parquet",
         "hydroborder": PROCESSED_DIR / "hydroborder.parquet",
+        "hydroborder_regions": PROCESSED_DIR / "hydroborder_regions.parquet",
         "silos": PROCESSED_DIR / "silos.parquet",
         "agricontagion_nodes": PROCESSED_DIR / "agricontagion.parquet",
         "vuln_map": PROCESSED_DIR / "vuln_map.parquet",
+        "vuln_map_regions": PROCESSED_DIR / "vuln_map_regions.parquet",
+        "backtest_2021": PROCESSED_DIR / "backtest_2021_regions.parquet",
+        "backtest_2021_summary": PROCESSED_DIR / "backtest_2021_summary.parquet",
     }
 
     for key, path in files.items():
@@ -1010,20 +1018,44 @@ st.markdown(f"""
 raw_data = load_data()
 demo = get_demo_data()
 
-df_psi = raw_data.get("phenoshift") if raw_data.get("phenoshift") is not None else demo["psi_series"]
-df_norm = raw_data.get("phenological_norm") if raw_data.get("phenological_norm") is not None else demo["norm"]
-df_ndvi_cur = raw_data.get("ndvi_current") if raw_data.get("ndvi_current") is not None else pd.DataFrame(demo["ndvi_current"])
+def _region_frame(frame):
+    """Return one region's rows without mutating the cached source frame."""
+    if frame is None or "region_id" not in frame.columns:
+        return None
+    selected = frame[frame["region_id"] == selected_region_key].copy()
+    return selected.drop(columns=["region_id"]) if not selected.empty else None
+
+reg_psi = _region_frame(raw_data.get("phenoshift_regions"))
+reg_norm = _region_frame(raw_data.get("phenological_norm_regions"))
+reg_ndvi_cur = _region_frame(raw_data.get("ndvi_current"))
+reg_ndvi_baseline = _region_frame(raw_data.get("ndvi_baseline_regions"))
+reg_hydro = _region_frame(raw_data.get("hydroborder_regions"))
+hydro_regions_all = raw_data.get("hydroborder_regions")
+
+regional_data_available = reg_psi is not None and reg_norm is not None and reg_ndvi_cur is not None
+df_psi = reg_psi if regional_data_available else (raw_data.get("phenoshift") if raw_data.get("phenoshift") is not None else demo["psi_series"])
+df_norm = reg_norm if regional_data_available else (raw_data.get("phenological_norm") if raw_data.get("phenological_norm") is not None else demo["norm"])
+df_ndvi_cur = reg_ndvi_cur if regional_data_available else (raw_data.get("ndvi_current") if raw_data.get("ndvi_current") is not None else pd.DataFrame(demo["ndvi_current"]))
+df_ndvi_baseline = reg_ndvi_baseline
 df_econ = raw_data.get("economics") if raw_data.get("economics") is not None else demo["economics"]
-df_hydro = raw_data.get("hydroborder")
+df_hydro = reg_hydro if reg_hydro is not None else raw_data.get("hydroborder")
 df_silos = raw_data.get("silos")
-df_vuln = raw_data.get("vuln_map")
+df_backtest = raw_data.get("backtest_2021")
+backtest_summary = raw_data.get("backtest_2021_summary")
+df_vuln = raw_data.get("vuln_map_regions") if raw_data.get("vuln_map_regions") is not None else raw_data.get("vuln_map")
 if df_vuln is not None:
     df_vuln = df_vuln.copy()
+    if lang == "kk" and "name_kk" in df_vuln.columns:
+        df_vuln["name"] = df_vuln["name_kk"]
+    if "region_id" in df_vuln.columns:
+        regional_vuln = df_vuln[df_vuln["region_id"] == selected_region_key]
+        if not regional_vuln.empty:
+            df_vuln = regional_vuln
 
 causality_data = raw_data.get("causality")
-using_demo = raw_data.get("phenoshift") is None
+using_demo = not regional_data_available and raw_data.get("phenoshift") is None
 
-if df_psi is not None and "year" in df_psi.columns and selected_year not in df_psi["year"].values:
+if not regional_data_available and df_psi is not None and "year" in df_psi.columns and selected_year not in df_psi["year"].values:
     demo_psi_row = demo["psi_series"][demo["psi_series"]["year"] == selected_year]
     if not demo_psi_row.empty:
         df_psi = pd.concat([df_psi, demo_psi_row], ignore_index=True)
@@ -1034,7 +1066,7 @@ if df_econ is not None and "year" in df_econ.columns and selected_year not in df
         df_econ = pd.concat([df_econ, demo_econ_row], ignore_index=True)
 
 # ─── 2021 & 2023 жылдардағы тарихи құрғақшылық деректерін бекіту ───
-if df_psi is not None and "year" in df_psi.columns:
+if not regional_data_available and df_psi is not None and "year" in df_psi.columns:
     df_psi = df_psi.copy()
     df_psi.loc[df_psi["year"] == 2021, ["psi", "delay_days", "risk"]] = [-3.200, 11, "HIGH_LATE"]
     df_psi.loc[df_psi["year"] == 2023, ["psi", "delay_days", "risk"]] = [-2.100, 7, "HIGH_LATE"]
@@ -1087,20 +1119,25 @@ wheat_price = float(df_econ[df_econ["year"] == selected_year]["wheat_price_usd_t
 grain_prod = float(df_econ[df_econ["year"] == selected_year]["grain_prod_mt"].values[0]) if "year" in df_econ.columns and not df_econ[df_econ["year"] == selected_year].empty else 19.2
 
 # ─── SMAI индикаторын таңдалған жылға сәйкестендіру ─────────
-smai_current = 0.42
-if selected_year == 2021:
-    smai_current = -2.55
-elif selected_year == 2023:
-    smai_current = -1.80
-elif selected_year in {2017, 2022, 2024}:
-    smai_current = 0.45
-elif df_hydro is not None and not df_hydro.empty:
+smai_current = None
+if df_hydro is not None and not df_hydro.empty:
     y_col = "smai" if "smai" in df_hydro.columns else "soil_moisture"
     df_h_year = df_hydro[df_hydro["year"] == selected_year] if "year" in df_hydro.columns else pd.DataFrame()
     if not df_h_year.empty and y_col in df_h_year.columns:
-        smai_current = float(df_h_year[y_col].mean())
+        smai_current = float(df_h_year.sort_values("date")[y_col].iloc[-1])
     elif y_col in df_hydro.columns:
-        smai_current = float(df_hydro[y_col].iloc[-1])
+        smai_current = float(df_hydro.sort_values("date")[y_col].iloc[-1])
+
+if smai_current is None and not regional_data_available:
+    smai_current = 0.42
+    if selected_year == 2021:
+        smai_current = -2.55
+    elif selected_year == 2023:
+        smai_current = -1.80
+    elif selected_year in {2017, 2022, 2024}:
+        smai_current = 0.45
+if smai_current is None:
+    smai_current = 0.0
 
 # ─── Шок симуляциясы (Stress-Test / What-If Multi-Crop Engine) ─
 
@@ -1159,7 +1196,7 @@ col1, col2, col3, col4, col5 = st.columns(5)
 with col1:
     delta_days_str = f"{delay_days:+d} күн" if lang == "kk" else f"{delay_days:+d} дней"
     st.metric(
-        "PhenoShift Index",
+        "PhenoShift NDVI",
         f"{current_psi:+.3f}",
         delta=delta_days_str,
         delta_color="inverse",
@@ -1189,6 +1226,13 @@ with col5:
         "Астық белдеуі алаптары" if lang == "kk" else "Бассейнов зернового пояса",
         f"{basins_monitored}",
         help="Тобыл, Есіл (Ишим), Нұра, Ертіс (Иртыш) — 4 негізгі өзен артериясы" if lang == "kk" else "Тобол, Ишим, Нура, Иртыш — 4 ключевые речные артерии зернового пояса"
+    )
+
+if selected_year >= 2025:
+    st.caption(
+        "ℹ️ 2025–2026 баға мен өнім — болжамдық бағалау; ресми статистикалық жиынтық емес."
+        if lang == "kk" else
+        "ℹ️ Цены и урожай 2025–2026 — прогнозная оценка, а не официальный статистический ряд."
     )
 
 st.divider()
@@ -1310,9 +1354,10 @@ tab4_lbl = "📈 Contagion"
 tab5_lbl = "🚨 Vulnerability"
 tab6_lbl = "🔙 Backtesting 2021"
 tab7_lbl = "🌾 AgroAdvisor"
+tab8_lbl = "Ғарыштық сегмент" if lang == "kk" else "Космический сегмент"
 
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
-    tab1_lbl, tab2_lbl, tab3_lbl, tab4_lbl, tab5_lbl, tab6_lbl, tab7_lbl
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
+    tab1_lbl, tab2_lbl, tab3_lbl, tab4_lbl, tab5_lbl, tab6_lbl, tab7_lbl, tab8_lbl
 ])
 
 
@@ -1328,6 +1373,7 @@ with tab1:
             "Қызыл аймақтар = ресми статистика жарияланғанға дейін 45–90 күн бұрын өнімге төнген қатерді білдіреді."
         )
         st.info("📡 **100% Барлық ауа райына төзімді мониторинг**: Sentinel-2 оптикалық деректері **Sentinel-1 (SAR)** радарлық суреттерімен толықтырылады. Радиотолқындар бұлтты кедергісіз тесіп өтіп, топырақтың кедір-бұдырлығы мен ылғалдылығын дәл өлшейді және жылдың 365 күнінде деректердің үздіксіздігіне кепілдік береді.", icon="🛰️")
+        st.caption("ℹ️ Бұл жердегі PhenoShift — NDVI қалыптан ауытқуы. PSI_radar = σ°VH/(σ°VV+σ°VH) — бөлек радарлық индекс, «Ғарыштық сегмент» бөлімінде.")
     else:
         st.markdown("## 🌱 PhenoShift Index — Фенологический мониторинг")
         st.markdown(
@@ -1335,6 +1381,7 @@ with tab1:
             "Красные зоны = угроза урожаю за 45–90 дней до официальной статистики."
         )
         st.info("📡 **100% Всепогодный мониторинг**: Оптические данные Sentinel-2 дополняются радарными снимками **Sentinel-1 (SAR)**. Радиоволны пробивают облака, измеряя шершавость и влажность почвы, гарантируя непрерывность данных 365 дней в году.", icon="🛰️")
+        st.caption("ℹ️ PhenoShift здесь — аномалия NDVI. PSI_radar = σ°VH/(σ°VV+σ°VH) — отдельный радарный индекс в блоке «Космический сегмент».")
 
     col_a, col_b = st.columns([3, 2])
 
@@ -1372,23 +1419,27 @@ with tab1:
 
         # Таңдалған жылдың NDVI қисығы (Тарихи деректерден немесе модельдеу)
         df_year_plot = pd.DataFrame()
-        p_ts_ndvi = PROCESSED_DIR / "ndvi_timeseries.parquet"
-        if p_ts_ndvi.exists():
-            try:
-                df_ts_all = pd.read_parquet(p_ts_ndvi)
-                if "year" in df_ts_all.columns and selected_year in df_ts_all["year"].values:
-                    df_year_plot = df_ts_all[df_ts_all["year"] == selected_year].sort_values("doy").groupby("doy")["ndvi"].mean().reset_index()
-            except Exception:
-                pass
+        if df_ndvi_baseline is not None and "year" in df_ndvi_baseline.columns and selected_year in df_ndvi_baseline["year"].values:
+            df_year_plot = df_ndvi_baseline[df_ndvi_baseline["year"] == selected_year].sort_values("doy").groupby("doy")["ndvi"].mean().reset_index()
+        else:
+            p_ts_ndvi = PROCESSED_DIR / "ndvi_timeseries.parquet"
+            if p_ts_ndvi.exists():
+                try:
+                    df_ts_all = pd.read_parquet(p_ts_ndvi)
+                    if "year" in df_ts_all.columns and selected_year in df_ts_all["year"].values:
+                        df_year_plot = df_ts_all[df_ts_all["year"] == selected_year].sort_values("doy").groupby("doy")["ndvi"].mean().reset_index()
+                except Exception:
+                    pass
 
         if df_year_plot.empty and df_ndvi_cur is not None and "doy" in df_ndvi_cur.columns:
             df_year_plot = df_ndvi_cur.copy()
-            if selected_year == 2021:
-                df_year_plot["ndvi"] = np.clip(df_year_plot["ndvi"] * 0.70 - 0.03, 0.05, 0.9)
-            elif selected_year == 2023:
-                df_year_plot["ndvi"] = np.clip(df_year_plot["ndvi"] * 0.80 - 0.02, 0.05, 0.9)
-            elif selected_year in {2017, 2022, 2024}:
-                df_year_plot["ndvi"] = np.clip(df_year_plot["ndvi"] * 1.15 + 0.02, 0.05, 0.9)
+            if not regional_data_available:
+                if selected_year == 2021:
+                    df_year_plot["ndvi"] = np.clip(df_year_plot["ndvi"] * 0.70 - 0.03, 0.05, 0.9)
+                elif selected_year == 2023:
+                    df_year_plot["ndvi"] = np.clip(df_year_plot["ndvi"] * 0.80 - 0.02, 0.05, 0.9)
+                elif selected_year in {2017, 2022, 2024}:
+                    df_year_plot["ndvi"] = np.clip(df_year_plot["ndvi"] * 1.15 + 0.02, 0.05, 0.9)
 
         if not df_year_plot.empty and "doy" in df_year_plot.columns:
             trace_color = "#FF3D71" if selected_year in DROUGHT_YEARS else ("#00E676" if selected_year in {2017, 2022, 2024} else "#FFB300")
@@ -1585,7 +1636,7 @@ with tab2:
         "pavlodar": ("irtysh", "Ертіс / Иртыш", "Павлодар обл."),
     }
     cur_basin_id, cur_basin_name, cur_basin_region = region_to_basin.get(selected_region_key, ("ishim", "Есіл / Ишим", "СҚО"))
-    reg_smai_val = smai_current - (0.2 if cur_basin_id == "tobol" else (-0.1 if cur_basin_id == "nura" else 0.0))
+    reg_smai_val = smai_current
     smai_delta_pct = int(reg_smai_val * 18)
 
     col_h1, col_h2, col_h3 = st.columns(3)
@@ -1653,7 +1704,7 @@ with tab2:
 
     st.markdown("---")
 
-    df_smap_plot = df_hydro if df_hydro is not None else demo["smap_demo"]
+    df_smap_plot = hydro_regions_all if hydro_regions_all is not None else (df_hydro if df_hydro is not None else demo["smap_demo"])
 
     basins = ["tobol", "ishim", "nura", "irtysh"]
     if lang == "kk":
@@ -1679,23 +1730,13 @@ with tab2:
         vertical_spacing=0.05,
     )
 
+    missing_basins = []
     for i, basin in enumerate(basins, 1):
         df_b = pd.DataFrame()
         if "basin" in df_smap_plot.columns:
             df_b = df_smap_plot[df_smap_plot["basin"] == basin].copy()
             if df_b.empty:
-                avail = df_smap_plot["basin"].dropna().unique()
-                ref_b = "tobol" if "tobol" in avail else (avail[0] if len(avail) > 0 else None)
-                if ref_b is not None:
-                    df_ref = df_smap_plot[df_smap_plot["basin"] == ref_b].copy()
-                    rng = np.random.default_rng(42 + i)
-                    offset = 0.12 if basin == "ishim" else (-0.16 if basin == "nura" else -0.22)
-                    df_b = df_ref.copy()
-                    df_b["basin"] = basin
-                    if "smai" in df_b.columns:
-                        df_b["smai"] = df_ref["smai"] * 0.90 + offset + rng.normal(0, 0.15, len(df_ref))
-                    if "soil_moisture" in df_b.columns:
-                        df_b["soil_moisture"] = np.clip(df_ref["soil_moisture"] * 0.94 + 0.003, 0.02, 0.45)
+                missing_basins.append(basin)
         else:
             df_b = df_smap_plot.copy()
 
@@ -1718,6 +1759,12 @@ with tab2:
 
         fig_hydro.add_hline(y=-1, line_dash="dash", line_color="#FF3B30", line_width=1, row=i, col=1)
         fig_hydro.add_hline(y=0, line_color="rgba(255,255,255,0.15)", line_width=1, row=i, col=1)
+
+    if missing_basins:
+        st.warning(
+            ("SMAP деректері жоқ алаптар: " if lang == "kk" else "Нет данных SMAP для бассейнов: ")
+            + ", ".join(missing_basins)
+        )
 
     hydro_title = (
         "SMAP топырақ ылғалдылығының аномалиясы индексі (SMAI) — Солтүстік астық белдеуі алаптары"
@@ -1773,9 +1820,17 @@ with tab3:
         st.markdown("## 🏗️ SiloSentry — Логистический арбитраж (207 ХПП Зернового пояса)")
         st.markdown(
             "Мониторинг **207 хлебоприемных предприятий** (ХПП) четырёх зерновых областей. "
-            "В реальном времени: загрузка, дефицитные районы, маршруты переброски зерна (КТЖ / автотранспорт) "
+            "Загрузка, дефицитные районы, маршруты переброски зерна (КТЖ / автотранспорт) "
             "и эконометрическая цепочка передачи цен зерно→мука→хлеб."
         )
+
+    st.caption(
+        "ℹ️ 207 ХПП — реестр + модель загрузки. Capacity/fill/status не являются live-телеметрией; "
+        "OSM/Shadow-аналитика обновляется отдельным pipeline."
+        if lang != "kk" else
+        "ℹ️ 207 ХПП — тізілім + жүктелу моделі. Capacity/fill/status — live-телеметрия емес; "
+        "OSM/Shadow талдауы бөлек pipeline арқылы жаңартылады."
+    )
 
     # ─── Phase 5: Загрузка 207 ХПП с динамическим стрессом (Step 5.1) ────
     _silo_region_filter = selected_region_key if selected_region_key != "all" else None
@@ -2229,83 +2284,38 @@ with tab4:
                 st.markdown(f"{status} **Лаг {lag_lbl}**: p = `{p_val:.3f}`{sig_note}")
             
             n_obs = gc.get("n_observations", 0)
-            if not significant_lags and n_obs < 15:
-                if lang == "kk":
-                    st.markdown("✅ **Лаг 3 ай**: p = `0.038`   ← МӘНДІ")
-                    st.markdown("✅ **Лаг 4 ай**: p = `0.021`   ← МӘНДІ")
-                else:
-                    st.markdown("✅ **Лаг 3 мес.**: p = `0.038`   ← ЗНАЧИМО")
-                    st.markdown("✅ **Лаг 4 мес.**: p = `0.021`   ← ЗНАЧИМО")
-                significant_lags = ["lag_3", "lag_4"]
-                best_p = 0.021
-            else:
-                best_p = gc.get("best_p_value")
+            best_p = gc.get("best_p_value")
 
             st.divider()
             if significant_lags and best_p is not None:
                 if lang == "kk":
                     st.success(
-                        "✅ **Қорытынды**: PSI бидайдың жергілікті баға спредінің өзгеруіне "
-                        "3–4 ай лагпен себепші болады (p < 0.05)"
-                    )
-                    st.caption(
-                        "*Ескерту: Талдау белсенді вегетация кезеңіндегі (сәуір–қыркүйек) "
-                        "синтезделген маусымішілік ай сайынғы деректер бойынша жүргізілді*"
+                        "✅ **Қорытынды**: PSI мен бидай бағасы арасында статистикалық мәнді "
+                        "Грейнджер байланысы табылды (p < 0.05)."
                     )
                 else:
                     st.success(
-                        "✅ **Вывод**: PSI Granger-причиняет изменение локального ценового спреда "
-                        "на пшеницу с лагом 3–4 месяца (p < 0.05)"
-                    )
-                    st.caption(
-                        "*Примечание: Анализ проведён на синтезированных внутрисезонных "
-                        "ежемесячных данных за период активной вегетации (апрель–сентябрь)*"
+                        "✅ **Вывод**: Обнаружена статистически значимая Granger-связь "
+                        "между PSI и ценой пшеницы (p < 0.05)."
                     )
             else:
                 if lang == "kk":
                     st.warning(
-                        f"⚠️ **Әлсіз байланыс** қарастырылған кезеңде (n={n_obs} бақылау, барлық p > 0.05). "
-                        "Статистикалық мәнділік үшін қосымша деректер қажет."
+                        f"⚠️ **Әлсіз байланыс**: n={n_obs} бақылау, барлық p > 0.05. "
+                        "Бұл деректер жиынтығы қорытынды үшін жеткіліксіз; синтетикалық p-мәндер қолданылмайды."
                     )
                 else:
                     st.warning(
-                        f"⚠️ **Слабая связь** на данном периоде (n={n_obs} наблюдений, все p > 0.05). "
-                        "Для статистической значимости нужно больше данных."
+                        f"⚠️ **Слабая связь**: n={n_obs} наблюдений, все p > 0.05. "
+                        "Данных недостаточно для вывода; синтетические p-значения не подставляются."
                     )
-        else:
-            demo_granger = [
-                (1, 0.312, False),
-                (2, 0.087, False),
-                (3, 0.041, True),
-                (4, 0.028, True),
-                (5, 0.067, False),
-                (6, 0.134, False),
-            ]
-            for lag, pval, sig in demo_granger:
-                emoji = "✅" if sig else "❌"
-                sig_tag = "  ← МӘНДІ" if (sig and lang == "kk") else ("  ← ЗНАЧИМО" if sig else "")
-                lag_tag = f"{lag} ай" if lang == "kk" else f"{lag} мес."
-                st.markdown(f"{emoji} **Лаг {lag_tag}** p = `{pval:.3f}`{sig_tag}")
 
-            st.divider()
-            if lang == "kk":
-                st.success(
-                    "✅ **Қорытынды**: PSI бидайдың жергілікті баға спредінің өзгеруіне "
-                    "3–4 ай лагпен себепші болады (p < 0.05)"
-                )
-                st.caption(
-                    "*Ескерту: Талдау белсенді вегетация кезеңіндегі (сәуір–қыркүйек) "
-                    "синтезделген маусымішілік ай сайынғы деректер бойынша жүргізілді*"
-                )
-            else:
-                st.success(
-                    "✅ **Вывод**: PSI Granger-причиняет изменение локального ценового спреда "
-                    "на пшеницу с лагом 3–4 месяца (p < 0.05)"
-                )
-                st.caption(
-                    "*Примечание: Анализ проведён на синтезированных внутрисезонных "
-                    "ежемесячных данных за период активной вегетации (апрель–сентябрь)*"
-                )
+        else:
+            st.warning(
+                "⚠️ Грейнджер есебі табылмады; синтетикалық мәндер қолданылмайды."
+                if lang == "kk" else
+                "⚠️ Отчёт Granger не найден; синтетические значения не подставляются."
+            )
 
         fig_scatter = go.Figure()
         if "psi" in df_psi.columns and "wheat_price_usd_t" in df_econ.columns:
@@ -2382,8 +2392,8 @@ with tab5:
 
     if df_vuln is not None and not df_vuln.empty and FOLIUM_AVAILABLE:
         m_vuln = folium.Map(
-            location=[53.8, 68.0],
-            zoom_start=7,
+            location=selected_reg_info["center"],
+            zoom_start=selected_reg_info["zoom"],
             tiles=TACTICAL_MAP_TILES,
             attr=TACTICAL_MAP_ATTR,
         )
@@ -2536,100 +2546,100 @@ with tab6:
     if lang == "kk":
         st.markdown("## 🔙 Тарихи бэктестинг модулі (2021 жылғы құрғақшылық)")
         st.markdown(
-            "2021 жылғы қуаңшылықтың тарихи деректері бойынша модельді ретроспективті тексеру (Қостанай және Ақмола обл.). "
-            "Ресми жаңалықтармен салыстырғанда AgriCascade жүйесінің тамырлық ылғал тапшылығын қаншалықты ерте анықтайтынын көрсетеді."
+            "Нақты NASA SMAP 2021 және 2015–2020 аймақтық норма бойынша ретроспективті тексеру. "
+            "2021 жыл нормаға кірмейді: data leakage жоқ. Дабыл күні деректен есептеледі."
         )
     else:
         st.markdown("## 🔙 Модуль исторического бэктестинга (Засуха 2021)")
         st.markdown(
-            "Ретроспективный тест модели на исторических данных засушливого 2021 года (Костанайская и Акмолинская обл.). "
-            "Показывает, насколько раньше AgriCascade обнаруживает корневой вододефицит по сравнению с официальными новостями."
+            "Ретроспективный тест на реальном NASA SMAP 2021 и региональной норме 2015–2020. "
+            "2021 год не входит в baseline: data leakage отсутствует. Дата сигнала считается из данных."
         )
-    
+
+    df_bt = pd.DataFrame()
+    if df_backtest is not None and "region_id" in df_backtest.columns:
+        df_bt = df_backtest[df_backtest["region_id"] == selected_region_key].copy()
+    trigger_date = None
+    if not df_bt.empty:
+        df_bt["date"] = pd.to_datetime(df_bt["date"])
+        below = df_bt[df_bt["smai"] < -1.5]
+        if not below.empty:
+            trigger_date = below["date"].min()
+    official_date = pd.Timestamp("2021-07-15")
+    lead_days = int((official_date - trigger_date).days) if trigger_date is not None else None
+
     col_bt1, col_bt2 = st.columns([3, 1])
-    
     with col_bt1:
-        dates_2021 = pd.date_range("2021-05-01", "2021-08-31", freq="W")
-        psi_2021 = [0.8, 0.5, 0.2, -0.1, -0.5, -1.2, -1.8, -2.5, -2.8, -3.1, -3.2, -3.0, -2.9, -2.8, -2.9, -3.0, -3.1, -3.1]
-        
         fig_bt = go.Figure()
-        
-        fig_bt.add_trace(go.Scatter(
-            x=dates_2021,
-            y=psi_2021,
-            mode='lines+markers',
-            name='PhenoShift Index (2021)',
-            line=dict(color='#FF3D71', width=3, shape="spline"),
-            marker=dict(size=7, color='#FF3D71'),
-        ))
-        
+        if not df_bt.empty:
+            fig_bt.add_trace(go.Scatter(
+                x=df_bt["date"], y=df_bt["smai"], mode="lines+markers",
+                name="SMAI (SMAP, 90 күн)" if lang == "kk" else "SMAI (SMAP, 90 дней)",
+                line=dict(color="#FF3D71", width=3, shape="spline"),
+                marker=dict(size=5, color="#FF3D71"),
+            ))
         crit_threshold_lbl = "Критикалық шек" if lang == "kk" else "Критический порог"
         fig_bt.add_hline(y=-1.5, line_dash="dash", line_color="#FFB300", annotation_text=crit_threshold_lbl)
         fig_bt.add_hline(y=0, line_color="rgba(255,255,255,0.2)")
-        
-        fig_bt.add_vline(
-            x="2021-06-18", line_width=2, line_dash="dash", line_color="#00E5FF",
-        )
-        alarm_text = "AgriCascade: Дабыл сигналы<br>(18 маусым)" if lang == "kk" else "AgriCascade: Сигнал тревоги<br>(18 июня)"
-        fig_bt.add_annotation(
-            x="2021-06-18", y=-1.5,
-            text=alarm_text,
-            showarrow=True, arrowhead=1, ax=-40, ay=-40,
-            font=dict(color="#00E5FF", size=12)
-        )
-        
-        fig_bt.add_vline(
-            x="2021-07-15", line_width=2, line_color="rgba(255,255,255,0.7)",
-        )
-        media_text = "Ресми: Құрғақшылық жарияланды<br>(15 шілде)" if lang == "kk" else "Официально: Засуха<br>(15 июля)"
-        fig_bt.add_annotation(
-            x="2021-07-15", y=-3.0,
-            text=media_text,
-            showarrow=True, arrowhead=1, ax=40, ay=40,
-            font=dict(color="white", size=12)
-        )
-        
-        fig_bt.add_vrect(
-            x0="2021-06-18", x1="2021-07-15",
-            fillcolor="rgba(0,229,255,0.12)", layer="below", line_width=0,
-        )
-        
+        fig_bt.add_vline(x=official_date, line_width=2, line_color="rgba(255,255,255,0.7)")
+        official_text = "Ресми жариялау<br>(15 шілде)" if lang == "kk" else "Официальное признание<br>(15 июля)"
+        fig_bt.add_annotation(x=official_date, y=-3.0, text=official_text, showarrow=True,
+                              arrowhead=1, ax=40, ay=40, font=dict(color="white", size=12))
+        if trigger_date is not None:
+            fig_bt.add_vline(x=trigger_date, line_width=2, line_dash="dash", line_color="#00E5FF")
+            alarm_text = f"AgriCascade: SMAI < -1.5<br>({trigger_date:%d.%m.%Y})"
+            fig_bt.add_annotation(x=trigger_date, y=-1.5, text=alarm_text, showarrow=True,
+                                  arrowhead=1, ax=-40, ay=-40, font=dict(color="#00E5FF", size=12))
+            if trigger_date < official_date:
+                fig_bt.add_vrect(x0=trigger_date, x1=official_date,
+                                 fillcolor="rgba(0,229,255,0.12)", layer="below", line_width=0)
         bt_title = (
-            "Әрекет ету уақытын салыстыру: AgriCascade vs Ресми БАҚ (2021 жыл)"
+            "Әрекет ету уақытын салыстыру: AgriCascade vs ресми жариялау (2021)"
             if lang == "kk" else
-            "Сравнение времени реакции: AgriCascade vs Официальные СМИ (2021 год)"
+            "Сравнение времени реакции: AgriCascade vs официальное признание (2021)"
         )
-        bt_xaxis = "Күні" if lang == "kk" else "Дата"
-        bt_yaxis = "PSI (Қалыптан ауытқу)" if lang == "kk" else "PSI (Отклонение от нормы)"
-
         fig_bt.update_layout(
             title=bt_title,
-            xaxis_title=bt_xaxis,
-            yaxis_title=bt_yaxis,
+            xaxis_title="Күні" if lang == "kk" else "Дата",
+            yaxis_title="SMAI",
             height=400,
             **PLOTLY_THEME,
         )
         st.plotly_chart(fig_bt, width='stretch')
-        
+        st.caption(
+            "Дереккөз: NASA SMAP 9 км, декадалық SMAI; baseline 2015–2020, 2021 кірмейді. "
+            "Зерттеу мақсаты: 18.06.2021 / SMAI −1.68 (дезагрегацияланған SMAP); платформа әзірге 9 км қолданады, сондықтан дата өзгеше."
+            if lang == "kk" else
+            "Источник: NASA SMAP 9 км, декадный SMAI; baseline 2015–2020, 2021 не входит. "
+            "Цель исследования: 18.06.2021 / SMAI −1.68 (дезагрегированный SMAP); платформа пока использует 9 км, поэтому дата отличается."
+        )
+
     with col_bt2:
-        if lang == "kk":
-            st.info("⏱️ **Ерте ескерту**")
-            st.metric("Уақыт артықшылығы", "27 күн", delta="AgriCascade жылдамырақ")
-            st.markdown(
-                "2021 жылы Ауыл шаруашылығы министрлігі қатты құрғақшылықты тек шілде айының ортасында, "
-                "яғни фермерлер орны толмас шығынға ұшыраған кезде ғана ресми түрде мойындады.\n\n"
-                "AgriCascade вегетация индексінің критикалық шектен төмен түсуін (PSI < -1.5) **18 маусымда** тіркеді, "
-                "бұл фермерлер мен элеваторларға дайындыққа, сақтандыруға немесе логистиканы қайта құруға бір айға жуық уақыт берер еді."
-            )
+        st.info("⏱️ **Ерте ескерту**" if lang == "kk" else "⏱️ **Раннее предупреждение**")
+        if df_bt.empty:
+            st.warning("Бұл аймақ үшін 2021 бэктест деректері жоқ." if lang == "kk" else "Нет данных бэктеста 2021 для этого региона.")
         else:
-            st.info("⏱️ **Раннее предупреждение**")
-            st.metric("Преимущество во времени", "27 дней", delta="AgriCascade быстрее")
-            st.markdown(
-                "В 2021 году Минсельхоз официально признал сильную засуху только в середине июля, "
-                "когда фермеры уже понесли необратимые потери.\n\n"
-                "AgriCascade зафиксировала падение индекса вегетации ниже критической отметки (PSI < -1.5) **18 июня**, "
-                "что дало бы фермерам и элеваторам почти месяц на подготовку, страхование или перестройку логистики."
-            )
+            if trigger_date is not None:
+                st.metric("SMAP дабылы" if lang == "kk" else "Сигнал SMAP",
+                          f"{trigger_date:%d.%m.%Y}",
+                          delta=f"{lead_days} күн ерте" if lang == "kk" else f"{lead_days} дней раньше")
+                if lang == "kk":
+                    st.markdown(
+                        f"SMAI < -1.5 бірінші рет **{trigger_date:%d.%m.%Y}** тіркелді. "
+                        f"Ресми жариялау: **15.07.2021**. Айырма: **{lead_days} күн**."
+                    )
+                else:
+                    st.markdown(
+                        f"SMAI < -1.5 впервые зафиксирован **{trigger_date:%d.%m.%Y}**. "
+                        f"Официальная дата: **15.07.2021**. Разница: **{lead_days} дней**."
+                    )
+            else:
+                st.warning("2021 жылы SMAI шегінен төмен түсу тіркелген жоқ." if lang == "kk" else "В 2021 году порог SMAI не был пересечён.")
+        st.caption(
+            "2021 жыл baseline-қа кірмейді: data leakage жоқ. Сигнал SMAP-тан есептелді."
+            if lang == "kk" else
+            "2021 год не входит в baseline: data leakage отсутствует. Сигнал рассчитан по SMAP."
+        )
 
 
 # ─────────────────────────────────────────────
@@ -2724,6 +2734,12 @@ with tab7:
 
     if render_agroadvisor_tab:
         render_agroadvisor_tab(lang=lang)
+
+with tab8, st.container(key="space_segment"):
+    render_space_segment_tab(
+        lang=lang, region_id=selected_region_key, crop_id=selected_crop_key,
+        year=selected_year, shock_percent=abs(shock_ili_smai),
+    )
 
 
 # ── Төменгі қолтаңба (Footer) ────────────────

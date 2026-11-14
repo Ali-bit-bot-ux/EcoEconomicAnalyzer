@@ -1,0 +1,10 @@
+{
+  "schema_version": "agricascade.noaa-kp-cache/1",
+  "observation": {
+    "kp": 1.33,
+    "observed_at": "2026-11-13T06:00:00+00:00",
+    "source": "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json",
+    "stale": false,
+    "product": "NOAA estimated planetary Kp, 3-hour interval"
+  }
+}
