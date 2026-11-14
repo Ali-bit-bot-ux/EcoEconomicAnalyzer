@@ -193,6 +193,24 @@ class GEEClient:
             .select("soil_moisture_am")
         )
 
+    def get_smap_usda(
+        self,
+        geometry: ee.Geometry,
+        start_date: str,
+        end_date: str,
+    ) -> ee.ImageCollection:
+        """Legacy NASA-USDA Enhanced SMAP 10 km product used by the 2021 research work.
+
+        The product was discontinued in August 2022 and is superseded by
+        NASA/SMAP/SPL4SMGP/008; it is retained only for historical validation.
+        """
+        return (
+            ee.ImageCollection("NASA_USDA/HSL/SMAP10KM_soil_moisture")
+            .filterBounds(geometry)
+            .filterDate(start_date, end_date)
+            .select(["ssm", "susm", "smp", "ssma", "susma"])
+        )
+
     def get_sentinel1(
         self,
         geometry: ee.Geometry,

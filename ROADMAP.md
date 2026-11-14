@@ -204,7 +204,7 @@
 - [x] **9.6 Backtesting 2021:** SMAP, baseline строго 2015–2020, декадная норма, threshold −1.5. Текущие 9-км результаты: СКО 10.05/66, Костанай 30.05/46, Акмола 20.06/25, Павлодар 10.06/35. Цель 18.06/−1.68 пока не воспроизведена из-за отсутствия downscaling; это отражено в UI.
 - [x] **9.7 SiloGrid provenance:** capacity/fill/status явно помечены как реестр/модель, не live-телеметрия.
 - [x] **9.10 PSI separation:** `PSI_radar = σVH/(σVV+σVH)` добавлен отдельно; RVI = 4×PSI_radar; PhenoMap подписан как NDVI-аномалия. 5 каналов в космическом блоке, 67 тестов.
-- [ ] **9.11 Downscaling SMAP→10 м:** S1 VV/VH + TWI + regression; затем повторный backtest 2021 и сверка с research target.
+- [ ] **9.11 Field-level validation 2021:** восстановить 42 тестовых поля и legacy NASA-USDA 10 км; проверить 18.06/−1.68/27 дней на полях. NASA-USDA снят с GEE в 2022; текущий SPL3SMP_E/006 — для 2026. Downscaling 10 м — отдельно, региональное среднее он не меняет.
 - [x] **9.8 UI/deploy (частично):** новые parquet, `space_cache`, скрипты, тесты и код закоммичены (`11eb20c`) и отправлены в `origin/main`. Осталось: smoke-проверка Streamlit Cloud, README/requirements, адаптивность узких экранов.
 - [ ] **9.9 Economics (optional):** подключить реальный месячный ряд цен, если доступен API; иначе оставить явную прогнозную пометку.
 
