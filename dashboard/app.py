@@ -115,6 +115,14 @@ st.markdown("""
         color: #E2E8F0 !important;
     }
 
+    /* Streamlit өзінің ақ хедерін жасырамыз */
+    header[data-testid="stHeader"] {
+        background: transparent !important;
+    }
+    [data-testid="stDecoration"] {
+        display: none !important;
+    }
+
     /* Контейнер кеңістігі */
     .block-container {
         padding-top: 1.2rem !important;
@@ -241,6 +249,10 @@ st.markdown("""
         letter-spacing: 0.08em !important;
         color: #94A3B8 !important;
         margin-bottom: 4px !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        line-height: 1.25 !important;
     }
 
     [data-testid="stMetricValue"], .metric-value {
@@ -389,6 +401,49 @@ st.markdown("""
     }
     ::-webkit-scrollbar-thumb:hover {
         background: #00E5FF;
+    }
+
+    /* Узкие экраны / планшет и телефон */
+    @media (max-width: 768px) {
+        .block-container {
+            padding-left: 0.6rem !important;
+            padding-right: 0.6rem !important;
+            padding-top: 0.8rem !important;
+        }
+        .agri-header {
+            padding: 16px !important;
+            border-radius: 12px !important;
+        }
+        .agri-header-top {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .agri-title {
+            font-size: 1.45rem !important;
+            line-height: 1.25 !important;
+        }
+        .agri-subtitle {
+            font-size: 0.82rem !important;
+        }
+        .header-status-pill {
+            font-size: 0.62rem !important;
+            white-space: normal !important;
+        }
+        [data-testid="stMetricValue"], .metric-value {
+            font-size: 1.35rem !important;
+        }
+        div[data-testid="stHorizontalBlock"] {
+            flex-wrap: wrap !important;
+            gap: 0.5rem !important;
+        }
+        div[data-testid="column"] {
+            flex: 1 1 260px !important;
+            min-width: 260px !important;
+        }
+        iframe, .stPlotlyChart, .stDataFrame {
+            max-width: 100% !important;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -1223,7 +1278,7 @@ with col4:
 with col5:
     basins_monitored = 4
     st.metric(
-        "Астық белдеуі алаптары" if lang == "kk" else "Бассейнов зернового пояса",
+        "Алаптар" if lang == "kk" else "Бассейны",
         f"{basins_monitored}",
         help="Тобыл, Есіл (Ишим), Нұра, Ертіс (Иртыш) — 4 негізгі өзен артериясы" if lang == "kk" else "Тобол, Ишим, Нура, Иртыш — 4 ключевые речные артерии зернового пояса"
     )
@@ -1359,6 +1414,15 @@ tab8_lbl = "Ғарыштық сегмент" if lang == "kk" else "Космич�
 tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
     tab1_lbl, tab2_lbl, tab3_lbl, tab4_lbl, tab5_lbl, tab6_lbl, tab7_lbl, tab8_lbl
 ])
+
+if using_demo:
+    st.warning(
+        "⚠️ 2026 жылғы аймақтық деректер табылмады: көрсетіліп тұрған сандар — демонстрациялық fallback, "
+        "нақты өлшеу емес."
+        if lang == "kk" else
+        "⚠️ Региональные данные 2026 не найдены: показанные значения — демонстрационный fallback, "
+        "а не реальные измерения."
+    )
 
 
 # ══════════════════════════════════════════════

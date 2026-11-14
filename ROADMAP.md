@@ -194,7 +194,7 @@
 
 ## Phase 9 — Реальная платформа 2026 (Platform Integrity)
 **Цель:** убрать демонстрационные подстановки из рабочих сценариев.
-**Статус:** in_progress (2026-11-14): NDVI/SMAP 2026, Vulnerability, leak-free SMAP-backtest 2021 и SiloGrid provenance готовы; остались UI/deploy и economics.
+**Статус:** done локально ✅ (2026-11-14): NDVI/SMAP 2026, Vulnerability, leak-free SMAP-backtest 2021, SiloGrid provenance, README/requirements/адаптивность и synthetic-guard готовы. Внешний smoke Streamlit Cloud — после пуша; 9.11 заблокирован отсутствием исходной геометрии 42 полей.
 
 - [x] **9.1 NDVI/SMAP 2026 для 4 регионов:** `scripts/build_real_2026.py`; `ndvi_current_2026` (514), baseline 2015–2025 (месячные композиты), norm/PSI, `hydroborder_regions` (12 102), `smap_current_2026` (919). Источники GEE S2/SMAP.
 - [x] **9.2 Реактивность дашборда:** NDVI, норма, PSI и SMAI выбираются по региону; synthetic p-values Granger удалены; районная картограмма детерминирована по AWC.
@@ -204,7 +204,7 @@
 - [x] **9.6 Backtesting 2021:** SMAP, baseline строго 2015–2020, декадная норма, threshold −1.5. Текущие 9-км результаты: СКО 10.05/66, Костанай 30.05/46, Акмола 20.06/25, Павлодар 10.06/35. Цель 18.06/−1.68 пока не воспроизведена из-за отсутствия downscaling; это отражено в UI.
 - [x] **9.7 SiloGrid provenance:** capacity/fill/status явно помечены как реестр/модель, не live-телеметрия.
 - [x] **9.10 PSI separation:** `PSI_radar = σVH/(σVV+σVH)` добавлен отдельно; RVI = 4×PSI_radar; PhenoMap подписан как NDVI-аномалия. 5 каналов в космическом блоке, 67 тестов.
-- [ ] **9.11 Field-level validation 2021:** восстановить 42 тестовых поля и legacy NASA-USDA 10 км; проверить 18.06/−1.68/27 дней на полях. NASA-USDA снят с GEE в 2022; текущий SPL3SMP_E/006 — для 2026. Downscaling 10 м — отдельно, региональное среднее он не меняет.
-- [x] **9.8 UI/deploy (частично):** новые parquet, `space_cache`, скрипты, тесты и код закоммичены (`11eb20c`) и отправлены в `origin/main`. Осталось: smoke-проверка Streamlit Cloud, README/requirements, адаптивность узких экранов.
+- [ ] **9.11 Field-level validation 2021 — BLOCKED:** восстановить 42 тестовых поля и legacy NASA-USDA 10 км; проверить 18.06/−1.68/27 дней на полях. Повторный поиск в `EcoEconomicAnalyzer` и `d:\legion\Projects\AgriCascade` не нашёл GeoJSON/shp/KML/GPKG с полигонами; нужны исходники от пользователя. NASA-USDA снят с GEE в 2022; текущий SPL3SMP_E/006 — для 2026. Downscaling 10 м — отдельно, региональное среднее он не меняет.
+- [x] **9.8 UI/deploy (локально):** новые parquet, `space_cache`, скрипты, тесты и код закоммичены (`11eb20c`) и отправлены в `origin/main`. README переписан под 8 вкладок и ограничения, requirements очищен, CSS ≤768 px и тёмный хедер добавлены, браузер 390/1440 без overflow и JS-ошибок. Осталось внешнее: smoke Streamlit Cloud после пуша.
 - [ ] **9.9 Economics (optional):** подключить реальный месячный ряд цен, если доступен API; иначе оставить явную прогнозную пометку.
 

@@ -1,8 +1,8 @@
 # PROJECT_STATE.md — Текущее состояние AgriCascade
 
-**Дата обновления:** 2026-11-13
-**Текущий рубеж:** платформа AgriCascade на реальных данных 2026.
-**Статус:** PSI разведён на `PSI_radar` и PhenoShift NDVI; SMAI-backtest переведён на декадную норму 2015–2020; 115/115 тестов. Остались downscaling SMAP→10 м, Granger по месячным ценам, 42-полевая валидация и UI/deploy.
+**Дата обновления:** 2026-11-14
+**Текущий рубеж:** Phase 9 закрыт локально; 9.11 заблокирован отсутствием исходной геометрии 42 полей.
+**Статус:** PSI разведён на `PSI_radar` и PhenoShift NDVI; SMAI-backtest переведён на декадную норму 2015–2020; 115/115 тестов. README, requirements, адаптивность и synthetic-fallback закрыты. Остались внешний smoke Streamlit Cloud, 42-полевая валидация (нет исходников) и опциональный реальный ряд цен.
 
 ## 1. Сохранённая база
 - Phase 3–6: 4 региона, 5 культур, 20 районов, 207 ХПП, реактивная карта и экспресс-аудит.
@@ -56,6 +56,9 @@
 - Найден и исправлен браузерный сбой селектора орбиты после смены языка. Для нового блока локально улучшен контраст подписей, остальные вкладки не переоформлены.
 - Проверены скриншоты desktop/узкого viewport; полный 3D-куб содержит 6 слоёв и 2 связи, прямой SAR-луч заканчивается у поверхности, не у корней.
 - QA-артефакты: `D:/Temp/agricascade-phase7-browser-results.json`, `agricascade-final-tasking.json`, `agricascade-phase7-full-cube.png` и скриншоты SAR/узкого viewport в той же папке.
+- **2026-11-14 Phase 9 closure:** README переписан под 8 вкладок, 4 региона, реальные 2026-данные и раздел ограничений; невалидированные «18.06/−1.68/27 дней» и Granger p<0.05 больше не подаются как факт. `requirements.txt` очищен от неиспользуемых пакетов и дополнен `google-auth`. `m5_microvulnerability.py` больше не подставляет synthetic grid. Добавлены адаптивный CSS (≤768 px), тёмный Streamlit-хедер и предупреждение при demo-fallback.
+- **Браузер 2026-11-14:** Playwright/Chrome, viewport 390×844 и 1440×900; все 8 вкладок кликаются, KK/RU переключается, `scrollWidth == innerWidth`, console/page errors = 0. Артефакты: `D:/Temp/agricascade_phase9_browser.json`, `agricascade-narrow-390-top-kk.png`, `agricascade-narrow-390-ru.png`, `agricascade-desktop-1440.png`.
+- **42 поля:** повторный поиск в `EcoEconomicAnalyzer` и `d:\legion\Projects\AgriCascade` не нашёл GeoJSON/shp/KML/GPKG с полигонами 42 полей. Есть только региональные `backtest_2021_usda_*.parquet`; 9.11 остаётся внешним блокером.
 - В окружение установлены уже объявленные зависимости earthengine-api, shapely, loguru, rasterio, pyproj и отдельный инструмент проверки Playwright; requirements.txt не изменён. `python -m pip check` проходит.
 
 ## 5. GEE и кэш
@@ -87,14 +90,18 @@
 - `scripts/build_backtest_2021.py` — реальный дневной PSI 2021 из GEE; `backtest_2021_regions.parquet`, `backtest_2021_summary.parquet`.
 - SiloGrid: в UI добавлена явная пометка, что capacity/fill/status — реестр/модель, не live-телеметрия.
 - `tests/test_real_2026_data.py` — контракты региональных данных.
-- `PROJECT_STATE.md`, `ROADMAP.md` — актуальные статусы; Git-коммит не создавался.
+- `README.md` — актуальные 8 вкладок, архитектура, данные 2026 и раздел «Ограничения».
+- `requirements.txt` — добавлен `google-auth`; удалены неиспользуемые geemap, scikit-learn, matplotlib, seaborn, faostat, tqdm.
+- `modules/m5_microvulnerability.py` — synthetic-grid fallback заменён на явную ошибку.
+- `dashboard/app.py` — адаптивный CSS ≤768 px, тёмный хедер, предупреждение demo-fallback, короткая подпись метрики.
+- `PROJECT_STATE.md`, `ROADMAP.md` — актуальные статусы; Git-коммит создаётся в этой сессии.
 - Временный браузерный скрипт удалён; QA-артефакты вне репозитория.
 
 ## 7. Следующее атомарное действие (платформа)
-- UI/deploy-полировка: адаптивность узких экранов, скорость, README, requirements, проверка Streamlit Cloud; закоммитить новые parquet/скрипты.
-- Восстановить геометрию 42 тестовых полей и исходный NASA-USDA 2021; только на них проверять 18.06/−1.68/27 ± 4.5. Downscaling SMAP→10 м — отдельная задача для field-level карт, но региональное среднее она не исправит.
-- Granger: собрать месячный ряд цен; 42-полевая валидация; UI/deploy. Не возвращать hardcoded значения.
-- Economics: оставить явную прогнозную пометку или подключить реальный месячный ряд, если появится API.
+- Deploy: внешний smoke Streamlit Cloud после пуша; локальные README/requirements/адаптивность уже закрыты.
+- 9.11 (blocked): пользователю нужно предоставить исходную геометрию 42 полей (GeoJSON/shp) и/или исходный NASA-USDA 2021. Без них field-level проверка 18.06/−1.68/27 ± 4.5 невозможна; региональный бэктест уже честно показан в UI.
+- Economics (optional): подключить реальный месячный ряд цен, если появится API; иначе оставить прогнозную пометку.
+- FieldShift: `docs/features/fieldshift/` пока не отслеживается Git и не входит в Phase 9; это отдельная Phase 10.
 - Презентационные материалы пользователь готовит самостоятельно; платформенный роудмап их не включает.
 
 ## 8. Resume Script
