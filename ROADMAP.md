@@ -205,6 +205,6 @@
 - [x] **9.7 SiloGrid provenance:** capacity/fill/status явно помечены как реестр/модель, не live-телеметрия.
 - [x] **9.10 PSI separation:** `PSI_radar = σVH/(σVV+σVH)` добавлен отдельно; RVI = 4×PSI_radar; PhenoMap подписан как NDVI-аномалия. 5 каналов в космическом блоке, 67 тестов.
 - [ ] **9.11 Downscaling SMAP→10 м:** S1 VV/VH + TWI + regression; затем повторный backtest 2021 и сверка с research target.
-- [ ] **9.8 UI/deploy:** адаптивность узких экранов, скорость, README/requirements, Streamlit Cloud; закоммитить новые parquet и скрипты.
+- [x] **9.8 UI/deploy (частично):** новые parquet, `space_cache`, скрипты, тесты и код закоммичены (`11eb20c`) и отправлены в `origin/main`. Осталось: smoke-проверка Streamlit Cloud, README/requirements, адаптивность узких экранов.
 - [ ] **9.9 Economics (optional):** подключить реальный месячный ряд цен, если доступен API; иначе оставить явную прогнозную пометку.
 

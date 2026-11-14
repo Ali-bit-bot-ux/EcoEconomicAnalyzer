@@ -42,7 +42,8 @@
 ## 4. Проверки
 - `python tests/run_all_daryn_tests.py`: **115/115**, 0 ошибок, 0 сбоев; 85.71 с с реальными 2026-данными и SMAP-backtest.
 - Research-работа синхронизирована по Granger: исходные F=6.84/p=0.012 оставлены как исторический результат, добавлено явное ограничение n=8/current report no significance. Backup: `..._backup_before_granger_sync.docx`.
-- Deploy readiness: `data/processed` ~1.5 MB, новые parquet не игнорируются; commit/push не выполнялся без подтверждения.
+- Deploy: commit `11eb20c` создан и отправлен в `origin/main`; новые parquet и `space_cache` в репозитории (~1.5 MB). Streamlit Cloud должен подхватить ветку; smoke-проверка облака остаётся внешним шагом.
+- Research-работа обновлена отдельно (вне git-репозитория): roadmap, Telegram исключён, Granger-противоречие синхронизировано; backup `..._backup_before_granger_sync.docx`.
 - Из них 31 прежний, 67 космических, 9 оффлайн-кэша и 8 контрактов реальных данных; новые включают 40 комбинаций регион × культура × язык, состояния Streamlit, повреждённый кэш и проверки NDVI/SMAP/Vulnerability/2021/PSI_radar.
 - `python -m py_compile` для всех затронутых Python-файлов проходит.
 - Раннер исправлен для UTF-8: без исправления обычная Windows-консоль падала на Unicode ещё до запуска тестов.
